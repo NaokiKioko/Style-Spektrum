@@ -1,34 +1,56 @@
-import requests
 import os
+import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
+import urllib.request
 
+# Function to download the product image
+def download_image(image_url, folder_path):
+    try:
+        image_name = os.path.basename(image_url)
+        image_path = os.path.join(folder_path, image_name)
 
-def scrape_data(url):
+        # Download and save the image
+        urllib.request.urlretrieve(image_url, image_path)
+        print(f"Downloaded: {image_url}")
+    except Exception as e:
+        print(f"Failed to download {image_url}: {e}")
+
+# Function to scrape product images from a webpage
+def scrape_product_images(url, folder_path):
+    # Create folder if it doesn't exist
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+
+    # Send a request to fetch the content of the webpage
     response = requests.get(url)
-    soup = BeautifulSoup(response.text, "html.parser")
-    data = soup.find_all(tag, {class_: attribute_value})
-    print(data)
+    soup = BeautifulSoup(response.text, 'html.parser')
 
-continue_ = True
-while continue_:
-    print("1. Scrape data from a website")
+    # Find all potential image tags (like <img>, <source>, etc.)
+    img_tags = soup.find_all('img')
+
+    # Loop through the image tags and filter based on product-like attributes
+    for img in img_tags:
+        img_url = img.get('src')
+
+        # Some websites might use data-src for lazy-loaded images
+        if not img_url:
+            img_url = img.get('data-src') or img.get('data-lazy')
+
+        # Convert relative URL to absolute URL
+        img_url = urljoin(url, img_url)
+
+        # Download the product image
+        download_image(img_url, folder_path)
+
+# Example usage: Scraping from a product page
+
+save_folder = "product_images"
+continue_scraping = True
+while continue_scraping:
+    print("1. Scrape product images from a webpage")
     print("2. Exit")
     choice = input("Enter your choice: ")
     if choice == "1":
-        print("Enter the URL of the website you want to scrape data from")
-        url = input()
-        print("Enter the tag name you want to scrape data from")
-        tag = input()
-        print("Enter the class name you want to scrape data from")
-        class_ = input()
-        print("Enter the attribute name you want to scrape data from")
-        attribute = input()
-        print("Enter the attribute value you want to scrape data from")
-        attribute_value = input()
-        print("Enter the file name you want to save the data to")
-        file_name = input()
-        scrape_data(url)
-    elif choice == "2":
-        continue_ = False
-    else:
-        print("Invalid choice. Please enter a valid choice.")
+        input_url = input("Enter the URL of the webpage: ")
+        scrape_product_images(input_url, save_folder)
