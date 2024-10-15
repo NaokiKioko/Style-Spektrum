@@ -3,7 +3,8 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import urllib.request
-from ai import GetProductInfo, CheckProductHson
+from ai import GetProductInfo, CheckProductJson, FilterProductPictures2
+
 
 
 # Function to download the product image
@@ -25,7 +26,9 @@ def DownloadImage(imageurl, folderpath):
 def HandleImages(soup, url, folderpath):
     # Find all potential image tags (like <img>, <source>, etc.)
     imgTags = soup.find_all('img')
+    imgTags = imgTags[:10]
     imageLinks = []
+    filePaths = []
     # Loop through the image tags and filter based on product-like attributes
     for img in imgTags:
         imgurl = img.get('src')
@@ -37,17 +40,17 @@ def HandleImages(soup, url, folderpath):
         # Convert relative URL to absolute URL
         imgurl = urljoin(url, imgurl)
         imageLinks.append(imgurl)
-        
         # Download the product image
         DownloadImage(imgurl, folderpath)
-    return imageLinks
+        filePaths.append(folderpath+"/"+os.path.basename(imgurl))
+    return imageLinks, filePaths
 
 def handleproductinfo(soup, imagelinks):
     body = soup.find('body')
     PageText = body.gettext()
     
     product = GetProductInfo(PageText)
-    if not CheckProductHson(product):
+    if not CheckProductJson(product):
         print("Failed to get product info from AI")
         return None
     
@@ -65,9 +68,13 @@ def ScrapeProduct(url, folderpath):
     # Send a request to fetch the content of the webpage
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
-    imagelinks = HandleImages(soup, url, folderpath)
+    tuple = HandleImages(soup, url, folderpath)
+    
+    imagelinks = tuple[0]
+    filepaths = tuple[1]
     
     product = handleproductinfo(soup, imagelinks)
+    
     print("This is the product we got")
     print(product)
 
