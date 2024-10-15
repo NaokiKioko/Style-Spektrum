@@ -3,12 +3,14 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import urllib.request
-from ai import GetProductInfo, CheckProductJson, FilterProductPictures2
+import json
+from ai import GetProductInfo, CheckProductJson, FilterProductPictures
+from queue import SendMessage
 
 
 
 # Function to download the product image
-def DownloadImage(imageurl, folderpath):
+def DownloadImage(imageurl: str, folderpath: str):
     # Create folder for images if it doesn't exist
     if not os.path.exists(folderpath):
         os.makedirs(folderpath)
@@ -23,7 +25,7 @@ def DownloadImage(imageurl, folderpath):
     except Exception as e:
         print(f"Failed to download {imageurl}: {e}")
 
-def HandleImages(soup, url, folderpath):
+def HandleImages(soup: BeautifulSoup, url: str, folderpath: str):
     # Find all potential image tags (like <img>, <source>, etc.)
     imgTags = soup.find_all('img')
     imgTags = imgTags[:10]
@@ -45,7 +47,7 @@ def HandleImages(soup, url, folderpath):
         filePaths.append(folderpath+"/"+os.path.basename(imgurl))
     return imageLinks, filePaths
 
-def handleproductinfo(soup, imagelinks):
+def handleproductinfo(soup: BeautifulSoup, imagelinks: list):
     body = soup.find('body')
     PageText = body.gettext()
     
@@ -64,7 +66,7 @@ def handleproductinfo(soup, imagelinks):
     return product
 
 # Function to scrape product from a webpage
-def ScrapeProduct(url, folderpath):
+def ScrapeProduct(url: str, folderpath: str):
     # Send a request to fetch the content of the webpage
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -74,9 +76,15 @@ def ScrapeProduct(url, folderpath):
     filepaths = tuple[1]
     
     product = handleproductinfo(soup, imagelinks)
+    product = FilterProductPictures(product, imagelinks, filepaths)
     
-    print("This is the product we got")
+    print("This is the product we got:")
     print(product)
+    return product
+
+def PutinDatabase(product: json):
+    # Add the product to the database
+    pass
 
 # ----- Global Varibles -----
 savefolder = "productimages"
@@ -92,10 +100,7 @@ while continuescraping:
     if choice == "1":
         inputurl = input("Enter the URL of the webpage: ")
         product = ScrapeProduct(inputurl, savefolder)
-        # Put together GPT Prompt
-        # ask gpt to generate tags for the images
-        # Place results in msg queue
-        # delete all images in the folder
+        SendMessage("product", product)
     elif choice == "2":
         continuescraping = False
     elif choice == "3":
