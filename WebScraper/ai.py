@@ -3,6 +3,7 @@ import os
 import PIL.Image
 import json
 from dotenv import load_dotenv
+import re
 
 
 load_dotenv()
@@ -12,16 +13,19 @@ genai.configure(api_key = apiKey)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 def GetProductInfo(htmldata: str):
-    prompt = "You are the python def GetProductInfo().With this text data create a json object of the main product ignoring any 'other/similar product' sections:\n"
-    prompt += "{'title': 'Product Title', 'price': 'Product Price', 'description': 'Product Description', 'rating': 'Product Rating', isCloathing: 'bool'}\n"
-    prompt += "The html data and text is:\n"
+    prompt = "Respond with a valid Json filled in with these values:\n"
+    prompt += "{'title': string, 'price': int, 'description': string, 'rating': double, isCloathing: bool}\n"
+    prompt += "Using this data to fill it in:\n"
     prompt += htmldata
     response = model.generate_content(prompt)
-    product = json.loads(response)
-    if not response['isCloathing']:
+    jsonToLoad = re.search(r'{.*}', response.text).group()
+    if jsonToLoad is None:
+        return None
+    product = json.loads(jsonToLoad)
+    if not product['isCloathing']:
         return None
     # confirm that the json object is correct
-    if not CheckProductJson(response):
+    if not CheckProductJson(product):
         return None
     return product
 
@@ -38,7 +42,7 @@ def CheckProductJson(json: json):
         return False
     if not 'rating' in json:
         return False
-    if not 'isProduct' in json:
+    if not 'isCloathing' in json:
         return False
     return True
 

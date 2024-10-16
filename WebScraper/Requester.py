@@ -13,10 +13,7 @@ class Requester:
 
     def __init__(self):
         load_dotenv()
-        self.proxylist = []
-        filepath = os.path.join(os.path.dirname(__file__), 'proxies.txt')
-        with open(filepath, 'r') as f:
-            self.proxylist = f.read().splitlines()
+        self.LoadProxies()
 
     def GetProxy(self):
         return random.choice(self.proxylist)
@@ -33,40 +30,58 @@ class Requester:
 
     def FetchHTML(self, url):
         attempt = False
+        failCount = 0
         while (attempt == False):
             proxy = self.GetProxy()
             if len(self.proxylist) == 0:
                 print("No proxies available")
+                
                 return None
             try:
-                response = requests.get(url, headers=self.GetHeaders(), proxies={'http': f'http://{proxy}', 'https': f'http://{proxy}'}, timeout=100)
+                # limit retry count
+                response = requests.get(url, headers=self.GetHeaders(), proxies={'http': f'http://{proxy}', 'https': f'http://{proxy}'}, timeout=30)
                 response.raise_for_status()  # Raise an exception for HTTP errors
                 attempt = True
                 return response
             except requests.exceptions.RequestException as e:
-                print(f"Error fetching {url} with proxy {proxy} | {e}\n")
+                failCount += 1
+                print(f"\nFail: {failCount}\nError fetching {url} with proxy {proxy} | {e}\n")
                 self.proxylist.remove(proxy)
+                continue
 
 
     def DownloadImage(self, url: str):
         proxy = self.GetProxy()
         imageFilePaths = []
-        try:
-            response = requests.get(url, headers=self.GetHeaders(), proxies={'http': f'http://{proxy}', 'https': f'http://{proxy}'}, timeout=10)
-            response.raise_for_status()
-            image_filename = os.path.basename(url.split('?')[0])
-            image_path = os.path.join(self.savefolder, image_filename)
+        failCount = 0
+        attempt = False
+        while (attempt == False):
+            try:
+                response = requests.get(url, headers=self.GetHeaders(), proxies={'http': f'http://{proxy}', 'https': f'http://{proxy}'}, timeout=10)
+                response.raise_for_status()
+                attempt = True
+                image_filename = os.path.basename(url.split('?')[0])
+                image_path = os.path.join(self.savefolder, image_filename)
 
-            # Ensure folder exists
-            os.makedirs(self.savefolder, exist_ok=True)
+                # Ensure folder exists
+                os.makedirs(self.savefolder, exist_ok=True)
 
-            # Save image
-            with open(image_path, 'wb') as f:
-                f.write(response.content)
-            print(f"Image saved to {image_path}")
-            imageFilePaths.append(image_path)
-            return image_path
-        except requests.exceptions.RequestException as e:
-            print(f"Error downloading image from {url} with proxy {proxy}: {e}")
+                # Save image
+                with open(image_path, 'wb') as f:
+                    f.write(response.content)
+                print(f"Image saved to {image_path}")
+                imageFilePaths.append(image_path)
+                return image_path
+            except requests.exceptions.RequestException as e:
+                failCount += 1
+                print(f"\nFail: {failCount}\nError fetching {url} with proxy {proxy} | {e}\n")
+                self.proxylist.remove(proxy)
+                continue
+
+    def LoadProxies(self):
+        self.proxylist = []
+        filepath = os.path.join(os.path.dirname(__file__), 'proxies.txt')
+        with open(filepath, 'r') as f:
+            self.proxylist = f.read().splitlines()
             
 __all__ = ["Requester"]
