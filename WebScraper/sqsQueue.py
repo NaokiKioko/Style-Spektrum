@@ -5,7 +5,7 @@ import boto3
 
 
 sqs = boto3.client('sqs')
-queue_url = os.environ['QUEUE_URL']
+queue_url = os.environ.get('QUEUE_URL')
 
 def SendMessage(topic: str, message: json):
     response = sqs.send_message(

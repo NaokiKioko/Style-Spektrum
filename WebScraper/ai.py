@@ -2,7 +2,10 @@ import google.generativeai as genai
 import os
 import PIL.Image
 import json
+from dotenv import load_dotenv
 
+
+load_dotenv()
 # gets the api key from the environment variables
 apiKey = os.environ.get('GENAI_API_KEY')
 genai.configure(api_key = apiKey)
@@ -42,7 +45,7 @@ def CheckProductJson(json: json):
 def FilterProductPictures(json: json, urlList: list, folderpaths: list):
     # check if images are corralating to the product
     images = []
-    prompt = "You are the python def FilterProductPictures(). With this product data could you please respon only with a json object with the attribute 'imagesLinks' containing the images that are related to the product information given.\n"
+    prompt = "You are the python def FilterProductPictures(). With this product data could you please respond only with a json object with the attribute 'imagesLinks' containing the images that are related to the product information given. The order of image's matches the order of urls\n"
     prompt += "The product data is:\n"
     prompt += json['title'] + "\n"
     prompt += json['price'] + "\n"
@@ -52,6 +55,7 @@ def FilterProductPictures(json: json, urlList: list, folderpaths: list):
     for i in range(len(urlList)):
         prompt += urlList[i] + "\n"
         images.append(PIL.Image.open(folderpaths[i]))
+        
     endLinks = model.generate_content(prompt,images)
     json['imagesLinks'] = endLinks
     return json
