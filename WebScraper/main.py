@@ -2,7 +2,7 @@ import os
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from Requester import Requester
-from ai import GetProductInfo, CheckProductJson, FilterProductPictures
+from ai import GetProductInfo, FilterProductPictures, TagProductImages
 from sqsQueue import SendMessage
 
 from dotenv import load_dotenv
@@ -31,6 +31,32 @@ def ScrapeProduct(url: str):
     # Get the product images
     image_urls = []
     for img in soup.find_all('img'):
+        if not img.has_attr('src'):
+            continue
+        if img['src'].startswith('data:image'):
+            continue
+        # Discard svg and gif images
+        if img['src'].endswith('.svg') or img['src'].endswith('.gif'):
+            continue
+        # Discard small images (e.g., icons/logos)
+        if int(img.get('width', 0)) < 100 or int(img.get('height', 0)) < 100:
+            continue
+        # Filter out irrelevant images like logos, icons, and ads, but keep product alternates
+        if 'logo' in img.get('class', []) or 'icon' in img.get('class', []):
+            continue
+        if 'logo' in img.get('id', '') or 'icon' in img.get('id', ''):
+            continue
+        if 'banner' in img.get('class', []) or 'ad' in img.get('class', []):
+            continue
+        # Discard svg and gif images
+        if img['src'].endswith('.svg') or img['src'].endswith('.gif'):
+            continue
+
+        
+        img_url = urljoin(url, img['src'])
+        image_urls.append(img_url)
+
+        
         img_url = urljoin(url, img['src'])
         image_urls.append(img_url)
 

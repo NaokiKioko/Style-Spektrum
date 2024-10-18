@@ -3,6 +3,7 @@ import os
 import random
 from dotenv import load_dotenv
 class Requester:
+    load_dotenv()
     savefolder = os.environ.get('SAVE_FOLDER', 'Images')
 
     user_agents = [
@@ -12,10 +13,11 @@ class Requester:
     ]
 
     def __init__(self):
-        load_dotenv()
         self.LoadProxies()
 
     def GetProxy(self):
+        if len(self.proxylist) == 0:
+            return None
         return random.choice(self.proxylist)
 
     def GetHeaders(self):
@@ -32,16 +34,17 @@ class Requester:
         attempt = False
         failCount = 0
         while (attempt == False):
-            proxy = self.GetProxy()
             if len(self.proxylist) == 0:
                 print("No proxies available")
-                
+                self.LoadProxies()
                 return None
+            proxy = self.GetProxy()
             try:
                 # limit retry count
                 response = requests.get(url, headers=self.GetHeaders(), proxies={'http': f'http://{proxy}', 'https': f'http://{proxy}'}, timeout=30)
                 response.raise_for_status()  # Raise an exception for HTTP errors
                 attempt = True
+                self.LoadProxies()
                 return response
             except requests.exceptions.RequestException as e:
                 failCount += 1
@@ -51,11 +54,11 @@ class Requester:
 
 
     def DownloadImage(self, url: str):
-        proxy = self.GetProxy()
         imageFilePaths = []
         failCount = 0
         attempt = False
         while (attempt == False):
+            proxy = self.GetProxy()
             try:
                 response = requests.get(url, headers=self.GetHeaders(), proxies={'http': f'http://{proxy}', 'https': f'http://{proxy}'}, timeout=10)
                 response.raise_for_status()
@@ -71,6 +74,7 @@ class Requester:
                     f.write(response.content)
                 print(f"Image saved to {image_path}")
                 imageFilePaths.append(image_path)
+                self.LoadProxies()
                 return image_path
             except requests.exceptions.RequestException as e:
                 failCount += 1
