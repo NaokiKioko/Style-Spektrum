@@ -1,4 +1,5 @@
 import os
+import shutil
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from Requester import Requester
@@ -10,11 +11,16 @@ load_dotenv()
 requester = Requester()
 
 
+def DeleteProductImages():
+    # Delete productimages folder
+    shutil.rmtree(requester.savefolder, ignore_errors=True)
+
 # Function to scrape product information from a webpage
 def ScrapeProduct(url: str):
+    DeleteProductImages()
     # Get the webpage content
     response = requester.FetchHTML(url)
-    if response.status_code != 200:
+    if response == None or response.status_code != 200:
         print("Failed to get webpage content")
         return
 
@@ -23,20 +29,21 @@ def ScrapeProduct(url: str):
     AllText = extract_visible_text(soup)
     # Get the product information
     product = GetProductInfo(AllText)
-
     if product is None:
         print("Failed to get product information")
         return
+    product['url'] = url
 
     # Get the product images
     image_urls = []
-    for img in soup.find_all('img'):
+    images = soup.find_all('img')
+    for img in images:
         if not img.has_attr('src'):
             continue
         if img['src'].startswith('data:image'):
             continue
         # Discard svg and gif images
-        if img['src'].endswith('.svg') or img['src'].endswith('.gif'):
+        if 'svg' in img['src'] or 'gif' in img['src']:
             continue
         # Discard small images (e.g., icons/logos)
         if int(img.get('width', 0)) < 100 or int(img.get('height', 0)) < 100:
@@ -48,11 +55,6 @@ def ScrapeProduct(url: str):
             continue
         if 'banner' in img.get('class', []) or 'ad' in img.get('class', []):
             continue
-        # Discard svg and gif images
-        if img['src'].endswith('.svg') or img['src'].endswith('.gif'):
-            continue
-
-        
         img_url = urljoin(url, img['src'])
         image_urls.append(img_url)
 
@@ -63,45 +65,38 @@ def ScrapeProduct(url: str):
     # Filter the product images
     filepaths = []
     for img in image_urls:
-        filepaths.append(requester.DownloadImage(img))
-        
-    product = FilterProductPictures(product, image_urls, filepaths)
+        filepath = requester.DownloadImage(img)
+        if filepath is not None:
+            filepaths.append(filepath)
+    product['images'] = FilterProductPictures(product, image_urls, filepaths)
+    # FilterProductPictures(json: dict, urlList: list, folderpaths: list = None)
+    product['tags'] = TagProductImages(image_urls, filepaths)
     return product
 
 def extract_visible_text(soup: BeautifulSoup) -> str:
-    # Remove script, style, and other non-visible elements
-    for element in soup(['script', 'style', 'noscript', 'meta', 'link']):
-        element.extract()
+    # Find all elements of interest
+    content = soup.find_all(['h1', 'h2', 'h3', 'p', 'span'])  # Adjust as necessary
 
-    # Get all visible text
-    text = soup.get_text()
-
-    # Split into lines and remove leading/trailing spaces
-    lines = (line.strip() for line in text.splitlines())
-
-    # Break the lines further based on double spaces
-    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-
-    # Rebuild the text by filtering out empty chunks and joining with newline
-    visible_text = '\n'.join(chunk for chunk in chunks if chunk)
-
+    # Extract and join the visible text
+    visible_text = '\n'.join(element.get_text(strip=True) for element in content if element.get_text(strip=True))
+    
     return visible_text
 
 # Main script logic
 def main():
-    savefolder = os.environ.get('SAVE_FOLDER', 'Images')
     continuescraping = True
     while continuescraping:
         print("1. Scrape product images from a webpage")
         print("2. Exit")
         print("3. Demo using (https://www.kohls.com/product/prd-6953168/womens-croft-barrow-34-sleeve-smocked-challis-dress.jsp)")
         choice = input("Enter your choice: ")
-
         if choice == "1":
-            inputurl = input("Enter the URL of the webpage: ")
+            inputurl = Requester.StripDataFromURL(input("Enter the URL of the webpage: "))
             product = ScrapeProduct(inputurl)
-            print('-')
-            SendMessage("product", product)
+            if product is None:
+                print("Failed to scrape product information")
+            else:
+                SendMessage("product", product)
         elif choice == "2":
             continuescraping = False
         elif choice == "3":

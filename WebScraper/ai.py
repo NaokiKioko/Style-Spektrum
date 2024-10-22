@@ -1,7 +1,10 @@
+from tkinter import Image
 import google.generativeai as genai
 import os
-import PIL.Image
 import json
+import requests
+from PIL import Image
+import PIL
 from dotenv import load_dotenv
 import re
 
@@ -12,8 +15,9 @@ apiKey = os.environ.get('GENAI_API_KEY')
 genai.configure(api_key = apiKey)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
-def GetProductInfo(htmldata: str):
-    prompt = "Respond with a valid Json filled in with these values if you cant specifically find the Star rating put null:\n"
+def GetProductInfo(htmldata: str)-> json:
+    prompt = "You are the python def GetProductInfo(htmldata: str)->json.\n"
+    prompt += "Respond with one and only one valid Json filled with only the main products information from this data with these attributes:\n"
     prompt += "{'title': string, 'price': int, 'description': string, 'rating': double, isCloathing: bool}\n"
     prompt += "Using this data to fill it in:\n"
     prompt += htmldata
@@ -21,6 +25,7 @@ def GetProductInfo(htmldata: str):
     jsonToLoad = re.search(r'{.*}', response.text).group()
     if jsonToLoad is None:
         return None
+    jasonToLoad = jsonToLoad.replace("'", "\"")
     product = json.loads(jsonToLoad)
     if not product['isCloathing']:
         return None
@@ -47,26 +52,29 @@ def CheckProductJson(json: json):
     return True
 
 def FilterProductPictures(json: json, urlList: list, folderpaths: list):
-    # check if images are corralating to the product
-    images = []
-    prompt = "You are the python def FilterProductPictures(). With this product data could you please respond only with a json object with the attribute 'imagesLinks' containing the images that are related to the product information given. The order of image's matches the order of urls\n"
-    prompt += "The product data is:\n"
+    if len(urlList) != len(folderpaths):
+        raise ValueError("urlList and folderpaths must have the same length.")
+    images = [Image.open(path) for path in folderpaths]
+
+    prompt = "You are the python def FilterProductPictures(). With this product data and images, please respond only with a json object with the attribute 'imagesLinks' containing the URLs of the images that showcase the same clothing item. \n"
+    prompt += f"The product data is:\n"
     prompt += f"{json['title']}\n"
     prompt += f"{json['price']}\n"
     prompt += f"{json['description']}\n"
     prompt += f"{json['rating']}\n"
-    prompt += "The image urls are:\n"
-    for i in range(len(urlList)):
-        prompt += urlList[i] + "\n"
-        images.append(PIL.Image.open(folderpaths[i]))
-        
-    response = model.generate_content(prompt,images)
-    jsonToLoad = re.search(r'{.*}', response.text).group()
-    if jsonToLoad is None:
+    prompt += "The image URLs are:\n"
+    for i, url in enumerate(urlList):
+        prompt += f"{i+1}. {url}\n"
+    images.append(prompt)
+    response = model.generate_content(images)
+    try:
+        # Parse JSON response using json library
+        data = json.loads(response.text)
+        return data.get('imagesLinks')
+    except (json.JSONDecodeError, KeyError):
+        # Handle errors during parsing
+        print("Error parsing generated JSON")
         return None
-    endLinks = json.loads(jsonToLoad)
-    json['imagesLinks'] = endLinks
-    return json
 
 def TagProductImages(urlList: list, folderpaths: list):
     # check if images are corralating to the product
@@ -75,8 +83,8 @@ def TagProductImages(urlList: list, folderpaths: list):
     for i in range(len(urlList)):
         prompt += urlList[i] + "\n"
         images.append(PIL.Image.open(folderpaths[i]))
-        
-    response = model.generate_content(prompt,images)
+    images.append(prompt)
+    response = model.generate_content(images)
     jsonToLoad = re.search(r'{.*}', response.text).group()
     if jsonToLoad is None:
         return None

@@ -2,6 +2,9 @@ import requests
 import os
 import random
 from dotenv import load_dotenv
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+
 class Requester:
     load_dotenv()
     savefolder = os.environ.get('SAVE_FOLDER', 'Images')
@@ -20,8 +23,12 @@ class Requester:
             return None
         return random.choice(self.proxylist)
 
-    def GetHeaders(self):
-        return {'User-Agent': random.choice(self.user_agents)}
+    def GetHeaders(self, ):
+        return {
+            'User-Agent': random.choice(self.user_agents),
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Connection': 'keep-alive',
+        }
 
     def start_requests(self, urls):
         for url in urls:
@@ -52,6 +59,54 @@ class Requester:
                 self.proxylist.remove(proxy)
                 continue
 
+    # def fetch_html_selenium(self, url: str):
+    #     failCount = 0
+    #     while True:
+    #         if len(self.proxylist) == 0:
+    #             print("No proxies available")
+    #             self.LoadProxies()
+    #             return None
+
+    #         proxy = self.GetProxy()
+
+    #         # Set up Selenium options
+    #         chrome_options = Options()
+    #         chrome_options.add_argument('--headless')  # Run in headless mode (no UI)
+    #         # chrome_options.add_argument('--disable-gpu')  # Disable GPU acceleration
+    #         chrome_options.add_argument(f'--proxy-server={proxy}')  # Use proxy
+
+    #         # Initialize Chrome WebDriver with options (re-initialized for each proxy)
+    #         driver = webdriver.Chrome(options=chrome_options)
+
+    #         try:
+    #             # Fetch the page using Selenium
+    #             driver.get(url)
+
+    #             # Wait for the page to load (adjust as needed for slower pages)
+    #             driver.implicitly_wait(10)
+
+    #             # Check if the page title indicates an error
+    #             if "Error" in driver.title or "Not Found" in driver.title:
+    #                 print("Page seems to have an error, returning None")
+    #                 raise Exception("Error page detected")
+
+    #             # Get the page source
+    #             html = driver.page_source
+
+    #             # Simple HTML content check
+    #             if "This site can’t be reached" in html or "404" in html:
+    #                 raise Exception("Error page detected")
+
+    #             return html
+    #         except Exception as e:
+    #             failCount += 1
+    #             print(f"\nFail: {failCount}\nError fetching {url} with proxy {proxy} | {e}\n")
+    #             self.proxylist.remove(proxy)
+    #             driver.quit()  # Quit the driver if there was an error, and retry with a new proxy
+    #             continue
+    #         finally:
+    #             # Always close the browser after scraping is successful or all proxies are used
+    #             driver.quit()
 
     def DownloadImage(self, url: str):
         imageFilePaths = []
@@ -79,7 +134,10 @@ class Requester:
             except requests.exceptions.RequestException as e:
                 failCount += 1
                 print(f"\nFail: {failCount}\nError fetching {url} with proxy {proxy} | {e}\n")
-                self.proxylist.remove(proxy)
+                if self.proxylist.count(proxy) > 0:
+                    self.proxylist.remove(proxy)
+                else:
+                    return None
                 continue
 
     def LoadProxies(self):
@@ -88,4 +146,6 @@ class Requester:
         with open(filepath, 'r') as f:
             self.proxylist = f.read().splitlines()
             
+    def StripDataFromURL(url: str):
+        return url.split('?')[0]
 __all__ = ["Requester"]
