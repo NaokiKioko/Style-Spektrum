@@ -2,3 +2,4 @@
 productimages
 .env
 WebScraper/proxies.txt
+UsersService/node_modules
