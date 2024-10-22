@@ -1,0 +1,28 @@
+{
+  "name": "usersservice",
+  "version": "1.0.0",
+  "description": "User service for Style Spektrum",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NaokiKioko/Style-Spektrum.git"
+  },
+  "keywords": [
+    "User",
+    "NodeJs",
+    "Fassion"
+  ],
+  "author": "Damien Krock",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NaokiKioko/Style-Spektrum/issues"
+  },
+  "homepage": "https://github.com/NaokiKioko/Style-Spektrum#readme",
+  "dependencies": {
+    "express": "^4.21.1",
+    "mongodb": "^6.10.0"
+  }
+}
