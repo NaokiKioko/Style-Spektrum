@@ -2,3 +2,4 @@
 .env
 UsersService/node_modules
 WebScrapper/proxies.txt
+CatalogService/node_modules
