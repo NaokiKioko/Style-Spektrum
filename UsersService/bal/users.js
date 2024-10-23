@@ -30,6 +30,7 @@ async function login(email, password) {
     await dal.Interface("get", "Users", { email }).then((users) => {
         if (users.length === 0) {
             endcode = 404;
+            return
         }
         user = users[0];
         if (security.comparePassword(password, user.password)) {
@@ -40,11 +41,6 @@ async function login(email, password) {
         }
     });
     return {"jwt": jwt, "statuscode": endcode}
-}
-
-function logout(jwt) {
-    auth.invlaidateToken(jwt);
-    return 200;
 }
 
 async function deleteAccount(email, password) {
@@ -86,6 +82,5 @@ function ValidateEmail(email) {
 module.exports = {
     registerUser,
     login,
-    logout,
     deleteAccount
 }
