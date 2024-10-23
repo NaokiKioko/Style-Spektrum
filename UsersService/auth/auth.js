@@ -1,4 +1,5 @@
 // generate jwt token
+require('dotenv').config();
 const e = require('express');
 const jwt = require('jsonwebtoken');
 const secret = process.env.JWT_SECRET
