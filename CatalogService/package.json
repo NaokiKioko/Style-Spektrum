@@ -27,5 +27,8 @@
   "bugs": {
     "url": "https://github.com/NaokiKioko/Style-Spektrum/issues"
   },
-  "homepage": "https://github.com/NaokiKioko/Style-Spektrum#readme"
+  "homepage": "https://github.com/NaokiKioko/Style-Spektrum#readme",
+  "devDependencies": {
+    "@types/node": "^22.7.9"
+  }
 }

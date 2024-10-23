@@ -5,7 +5,7 @@ async function GetCatalogs() {
 }
 
 async function GetCatalog(id) {
-    return await dal.Interface("get", "catalog", {"_id":id});
+    return await dal.Interface("get", "catalog", {"id":id});
 }
 
 async function PostCatalog(catalog) {

@@ -14,9 +14,12 @@ app.get('/catalogs', async (req, res) => {
     res.status(200).send(catalogs);
 });
 
-app.get('/catalog/{id}', async (req, res) => {
+app.get('/catalog/:id', async (req, res) => {
     let id = req.params.id;
     const catalogs = await bal.GetCatalog(id);
+    if (catalogs.length === 0) {
+        res.status(404).send('Catalog not found');
+    }
     res.status(200).send(catalogs[0]);
 });
 
@@ -25,14 +28,14 @@ app.post('/catalog', async (req, res) => {
     res.status(201).send(result);
 });
 
-app.patch('/catalog/{id}', async (req, res) => {
+app.patch('/catalog/:id', async (req, res) => {
     let id = req.params.id;
     req.body.id = id;
     let result = await bal.PatchCatalog(id, req.body);
     res.status(202).send(result);
 });
 
-app.delete('/catalog/{id}', async (req, res) => {
+app.delete('/catalog/:id', async (req, res) => {
     let id = req.params.id;
     req.body.id = id;
     const result = await bal.DeleteCatalog(id, req.body);
