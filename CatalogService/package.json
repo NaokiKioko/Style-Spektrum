@@ -1,6 +1,31 @@
 {
   "dependencies": {
     "express": "^4.21.1",
-    "mongodb": "^6.10.0"
-  }
+    "mongodb": "^6.10.0",
+    "nodemon": "^3.1.7"
+  },
+  "name": "catalogservice",
+  "version": "1.0.0",
+  "description": "The API to get all the scraped info",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NaokiKioko/Style-Spektrum.git"
+  },
+  "keywords": [
+    "Catalog",
+    "fassion",
+    "API",
+    "nodeJS"
+  ],
+  "author": "Damien Krock",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NaokiKioko/Style-Spektrum/issues"
+  },
+  "homepage": "https://github.com/NaokiKioko/Style-Spektrum#readme"
 }
