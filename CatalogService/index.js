@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const bal = require('./bal/product.js');
+const bal = require('./bal/catalog.js');
 const port = 3001;
 
 app.use(express.json());
@@ -9,29 +9,34 @@ app.get('/', (req, res) => {
     res.send('Style Spektrum!');
 });
 
-app.get('/products', async (req, res) => {
-    const products = await bal.GetProducts();
-    res.send(products);
+app.get('/catalogs', async (req, res) => {
+    const catalogs = await bal.GetCatalogs();
+    res.status(200).send(catalogs);
 });
 
-app.get('/product', async (req, res) => {
-    const products = await bal.GetProducts();
-    res.send(products[0]);
+app.get('/catalog/{id}', async (req, res) => {
+    let id = req.params.id;
+    const catalogs = await bal.GetCatalog(id);
+    res.status(200).send(catalogs[0]);
 });
 
-app.post('/product', async (req, res) => {
-    const result = await bal.PostProducts(req.body);
-    res.send(result);
+app.post('/catalog', async (req, res) => {
+    const result = await bal.PostCatalog(req.body);
+    res.status(201).send(result);
 });
 
-app.patch('/product', async (req, res) => {
-    const result = await bal.PatchProducts(req.body);
-    res.send(result);
+app.patch('/catalog/{id}', async (req, res) => {
+    let id = req.params.id;
+    req.body.id = id;
+    let result = await bal.PatchCatalog(id, req.body);
+    res.status(202).send(result);
 });
 
-app.delete('/product', async (req, res) => {
-    const result = await bal.DeleteProducts(req.body);
-    res.send(result);
+app.delete('/catalog/{id}', async (req, res) => {
+    let id = req.params.id;
+    req.body.id = id;
+    const result = await bal.DeleteCatalog(id, req.body);
+    res.status(202).send(result);
 });
 
 app.listen(port, () => {
