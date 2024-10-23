@@ -4,8 +4,8 @@
   "description": "User service for Style Spektrum",
   "main": "index.js",
   "scripts": {
-    "run": "node index.js",
-    "test": "nodemon index.js",
+    "start": "node index.js",
+    "dev": "nodemon index.js",
     "debug": "node --inspect-brk index.js"
   },
   "repository": {
