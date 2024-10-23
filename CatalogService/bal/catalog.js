@@ -9,6 +9,10 @@ async function GetCatalog(id) {
     return await dal.Interface("get", "catalog", {_id: new ObjectId(id)});
 }
 
+async function GetCatalogbyTags(tags) {
+    return await dal.Interface("get", "catalog", {tags: { $all: tags }});
+}
+
 async function PostCatalog(catalog) {
     return await dal.Interface("post", "catalog", catalog);
 }
@@ -27,6 +31,7 @@ async function DeleteCatalog(id) {
 module.exports = {
     GetCatalogs,
     GetCatalog,
+    GetCatalogbyTags,
     PostCatalog,
     PatchCatalog,
     DeleteCatalog
