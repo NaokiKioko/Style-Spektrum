@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const bal = require('./bal/product.js');
-const port = 3000;
+const port = 3001;
 
 app.use(express.json());
 
@@ -33,10 +33,6 @@ app.delete('/product', async (req, res) => {
     const result = await bal.DeleteProducts(req.body);
     res.send(result);
 });
-
-
-
-
 
 app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
