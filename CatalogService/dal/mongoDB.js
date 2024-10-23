@@ -66,7 +66,7 @@ const PatchAny = async (client, type, object) => {
     try {
         const options = { upsert: true };
         const set = { $set: object[1] }
-        await new client.db(databaseName).collection(type).updateOne(object[0], set, options);
+        await client.db(databaseName).collection(type).updateOne(object[0], set, options);
         return 200
     } catch (err) {
         console.log(err);

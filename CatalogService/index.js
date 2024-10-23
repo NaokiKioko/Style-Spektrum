@@ -19,27 +19,47 @@ app.get('/catalog/:id', async (req, res) => {
     const catalogs = await bal.GetCatalog(id);
     if (catalogs.length === 0) {
         res.status(404).send('Catalog not found');
+        return;
+    }
+    if (catalogs === 500) {
+        res.status(500).send('Error updating catalog');
+        return;
     }
     res.status(200).send(catalogs[0]);
 });
 
 app.post('/catalog', async (req, res) => {
-    const result = await bal.PostCatalog(req.body);
-    res.status(201).send(result);
+    await bal.PostCatalog(req.body);
+    res.sendStatus(201);
 });
 
 app.patch('/catalog/:id', async (req, res) => {
     let id = req.params.id;
-    req.body.id = id;
     let result = await bal.PatchCatalog(id, req.body);
-    res.status(202).send(result);
+    if (result === 404) {
+        res.status(404).send('Catalog not found');
+        return;
+    }
+    if (result === 500) {
+        res.status(500).send('Error updating catalog');
+        return;
+    }
+    res.sendStatus(202);
 });
 
 app.delete('/catalog/:id', async (req, res) => {
     let id = req.params.id;
     req.body.id = id;
     const result = await bal.DeleteCatalog(id, req.body);
-    res.status(202).send(result);
+    if (result === 404) {
+        res.status(404).send('Catalog not found');
+        return;
+    }
+    if (result === 500) {
+        res.status(500).send('Error updating catalog');
+        return;
+    }
+    res.sendStatus(202);
 });
 
 app.listen(port, () => {
