@@ -14,11 +14,14 @@ class Requester:
         'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.1 Safari/605.1.15',
         # Add more user agents
     ]
+    working_proxie = None
 
     def __init__(self):
         self.LoadProxies()
 
     def GetProxy(self):
+        if self.working_proxie:
+            return self.working_proxie
         if len(self.proxylist) == 0:
             return None
         return random.choice(self.proxylist)
@@ -51,12 +54,16 @@ class Requester:
                 response = requests.get(url, headers=self.GetHeaders(), proxies={'http': f'http://{proxy}', 'https': f'http://{proxy}'}, timeout=30)
                 response.raise_for_status()  # Raise an exception for HTTP errors
                 attempt = True
+                self.working_proxie = proxy
                 self.LoadProxies()
                 return response
             except requests.exceptions.RequestException as e:
                 failCount += 1
-                print(f"\nFail: {failCount}\nError fetching {url} with proxy {proxy} | {e}\n")
+                print(f"\nProxies Failed: {failCount}\nError fetching {url} with proxy {proxy} | {e}\n")
+                # Set working proxy
+                self.working_proxie = None
                 self.proxylist.remove(proxy)
+                
                 continue
 
     # def fetch_html_selenium(self, url: str):
@@ -120,21 +127,22 @@ class Requester:
                 attempt = True
                 image_filename = os.path.basename(url.split('?')[0])
                 image_path = os.path.join(self.savefolder, image_filename)
-
                 # Ensure folder exists
                 os.makedirs(self.savefolder, exist_ok=True)
-
                 # Save image
                 with open(image_path, 'wb') as f:
                     f.write(response.content)
                 print(f"Image saved to {image_path}")
                 imageFilePaths.append(image_path)
+                # Set working proxy
+                self.working_proxie = proxy
                 self.LoadProxies()
                 return image_path
             except requests.exceptions.RequestException as e:
                 failCount += 1
-                print(f"\nFail: {failCount}\nError fetching {url} with proxy {proxy} | {e}\n")
+                print(f"\nProxies Failed: {failCount}\nError fetching {url} with proxy {proxy} | {e}\n")
                 if self.proxylist.count(proxy) > 0:
+                    self.working_proxie = None
                     self.proxylist.remove(proxy)
                 else:
                     return None

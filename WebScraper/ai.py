@@ -9,9 +9,9 @@ from dotenv import load_dotenv
 import re
 
 
-load_dotenv()
+load_dotenv("../.env")
 # gets the api key from the environment variables
-apiKey = os.environ.get('GENAI_API_KEY')
+apiKey = os.environ.get('GEMINI_API_KEY')
 genai.configure(api_key = apiKey)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
@@ -22,7 +22,9 @@ def GetProductInfo(htmldata: str)-> json:
     prompt += "Using this data to fill it in:\n"
     prompt += htmldata
     response = model.generate_content(prompt)
-    jsonToLoad = re.search(r'{.*}', response.text).group()
+    # remove tabs and newlines
+    text = response.text.replace("\n", "").replace("\t", "")
+    jsonToLoad = re.search(r'{.*}', text).group()
     if jsonToLoad is None:
         return None
     jasonToLoad = jsonToLoad.replace("'", "\"")

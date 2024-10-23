@@ -8,6 +8,8 @@ sqs = boto3.client('sqs')
 queue_url = os.environ.get('QUEUE_URL')
 
 def SendMessage(topic: str, message: json):
+    if (message == None):
+        return None
     response = sqs.send_message(
         QueueUrl=queue_url,
         MessageBody=json.dumps({
@@ -15,6 +17,5 @@ def SendMessage(topic: str, message: json):
             'message': message
         })
     )
-    return response
 
 __all__ = ["SendMessage"]

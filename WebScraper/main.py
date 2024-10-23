@@ -38,29 +38,13 @@ def ScrapeProduct(url: str):
     image_urls = []
     images = soup.find_all('img')
     for img in images:
-        if not img.has_attr('src'):
+        if product['name'] in img['src'] or url.split('/')[-1].replace(".html","").replace(".jpg", "") in img['src'] or img['loading'].lower() =="eger":
+            img_url = urljoin(url, img['src'])
+            if img_url in image_urls:
+                continue
+            image_urls.append(img_url)
+        else:
             continue
-        if img['src'].startswith('data:image'):
-            continue
-        # Discard svg and gif images
-        if 'svg' in img['src'] or 'gif' in img['src']:
-            continue
-        # Discard small images (e.g., icons/logos)
-        if int(img.get('width', 0)) < 100 or int(img.get('height', 0)) < 100:
-            continue
-        # Filter out irrelevant images like logos, icons, and ads, but keep product alternates
-        if 'logo' in img.get('class', []) or 'icon' in img.get('class', []):
-            continue
-        if 'logo' in img.get('id', '') or 'icon' in img.get('id', ''):
-            continue
-        if 'banner' in img.get('class', []) or 'ad' in img.get('class', []):
-            continue
-        img_url = urljoin(url, img['src'])
-        image_urls.append(img_url)
-
-        
-        img_url = urljoin(url, img['src'])
-        image_urls.append(img_url)
 
     # Filter the product images
     filepaths = []
