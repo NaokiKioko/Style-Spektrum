@@ -18,7 +18,7 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 def GetProductInfo(htmldata: str)-> json:
     prompt = "You are the python def GetProductInfo(htmldata: str)->json.\n"
     prompt += "Respond with one and only one valid Json filled with only the main products information from this data with these attributes:\n"
-    prompt += "{'title': string, 'price': int, 'description': string, 'rating': double, isCloathing: bool}\n"
+    prompt += "{'title': string, 'price': double, 'description': string, 'rating': double, isCloathing: bool}\n"
     prompt += "Using this data to fill it in:\n"
     prompt += htmldata
     response = model.generate_content(prompt)
