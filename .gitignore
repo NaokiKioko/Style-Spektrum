@@ -1,3 +1,5 @@
 .venv
 .env
+.vscode
 UsersService/node_modules
+CatalogService/node_modules
