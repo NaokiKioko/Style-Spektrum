@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/htmx.org@2.0.3"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Style Spektrum</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-white text-black">
+    <!-- Main Layout with Sidebar and Content -->
+    <div class="flex">
+    <!-- Sidebar for Styles -->
+        <aside class="bg-off-black w-1/4 h-screen pr-4 overflow-auto w-1/12">
+            <h2 class="text-xl text-off-white text-center font-semibold my-2">Your Styles</h2>
+            <ul class="bg-off-white text-off-black">
+                {{range .FavoriteStyles}}
+                    <li class="flex items-center outline hover:bg-off-black hover:text-off-white">
+                        <a href="#" class="block px-4 py-2 rounded-md hover:bg-off-white hover:text-off-black">{{.Name}}</a>
+                        <span class="font-size:200%; color:gray; margin-left: 8px; cursor: pointer;">★</span>
+                    </li>
+                {{end}}
+            </ul>
+            <h2 class="text-xl text-white font-semibold text-center my-2">Popular Styles</h2>
+            <ul class="bg-white text-black">
+                {{range .Styles}}
+                    <li class="flex items-center outline hover:bg-off-black hover:text-off-white">
+                        <a href="#" class="block px-4 py-2 rounded-md hover:bg-off-white hover:text-off-black ">{{.Name}}</a>
+                        <span class="font-size:200%; color:gray; margin-left: 8px; cursor: pointer;">☆</span>
+                    </li>
+                {{end}}
+            </ul>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1">
+            <!-- Logo as Image -->
+            <div class="justify-center">
+                <div class="flex justify-end bg-off-black space-x-4 back tp-1">
+                    <a href="#" class="text-off-white hover:bg-off-white hover:text-off-black">LOGIN</a>
+                    <p class="text-off-white">/</p>
+                    <a href="#" class=" text-off-white hover:bg-off-white hover:text-off-black">SIGN UP</a>
+                </div>
+                <img src="https://stylespektrumimages.s3.us-east-2.amazonaws.com/Style+Spectrum+Logo+v2.png" alt="Style Spectrum Logo" class="w-auto h-auto">
+            </div>
+
+            <!-- Product List Template -->
+            <div id="ProductViews" class="grid grid-cols-3 gap-6">
+            </div>
+        </main>
+    </div>
+
+</body>
+</html>
