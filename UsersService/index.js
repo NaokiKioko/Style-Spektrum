@@ -34,6 +34,12 @@ app.post('/login', async (req, res) => {
     }
 });
 
+app.get('/me', auth.authenticateToken, async (req, res) => {
+    let user = await bal.getUser(req.user.email);
+    delete user.password
+    res.status(200).send(user);
+});
+
 app.get('/logout', (req, res) => {
     res.status(200).send('just delete the jwt <3');
 });
