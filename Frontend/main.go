@@ -6,6 +6,12 @@ import (
 	"html/template"
 )
 
+type User struct {
+	Username string
+	Password string
+	FaboriteTags []string
+}
+
 func main() {
 	http.HandleFunc("/", IndexHandler)
 	http.ListenAndServe(":8080", nil)
@@ -19,9 +25,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		renderTemplate(w, "index.html", nil)
 		fmt.Println(jwt)
 	}
-
 }
-
 
 func renderTemplate(w http.ResponseWriter, templateName string, data interface{}) {
 	t, err := template.ParseFiles("templates/" + templateName)
