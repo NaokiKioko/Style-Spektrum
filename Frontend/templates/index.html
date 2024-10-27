@@ -15,12 +15,12 @@
     <!-- Sidebar for Styles -->
         <aside class="bg-[#1a1a1a] h-screen pr-4 overflow-auto w-1/10">
             <h2 class="text-xl text-[#e0e0e0] text-center font-semibold my-2">Your Styles</h2>
-            {{if .FavoriteStyles}}
+            {{if .User.FaboriteTags}}
                 <ul class="bg-[#e0e0e0] text-[#1a1a1a] ">
-                    {{range .FavoriteStyles}}
+                    {{range .User.FavoriteTags}}
                         <li class="flex items-center outline bg-[#e0e0e0] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
-                            <a href="#" class="block px-4 py-2 rounded-md">{{.Name}}</a>
-                            <span class="ml-2 cursor-pointer text-[#1a1a1a] hover:text-yellow transition-all" hx-post="/favorite/{{.Name}}" hx-swap="outerHTML" style="font-size: 150%">
+                            <a href="#" class="block px-4 py-2 rounded-md">{{.Tag}}</a>
+                            <span class="ml-2 cursor-pointer text-[#1a1a1a] hover:text-yellow transition-all" hx-post="/favorite/{{.User.Name}}" hx-swap="outerHTML" style="font-size: 150%">
                                 <span class="inline-block group-hover:hidden">★</span>
                             </span>
                         </li>
@@ -33,10 +33,10 @@
             </ul>
             <h2 class="text-xl text-white font-semibold text-center my-2">Popular Styles</h2>
             <ul class="bg-white text-black ">
-                {{range .Styles}}
+                {{range .AllTags}}
                     <li class="flex items-center outline bg-[#e0e0e0] text-[#1a1a1a]">
                         <a href="#" class="block px-4 py-2 rounded-md">{{.Name}}</a>
-                        <span class="ml-2 cursor-pointer text-[#1a1a1a] hover:text-yellow transition-all" hx-post="/favorite/{{.Name}}" hx-swap="outerHTML" style="font-size: 150%">
+                        <span class="ml-2 cursor-pointer text-[#1a1a1a] hover:text-yellow transition-all" hx-post="/favorite/{{.Tag}}" hx-swap="outerHTML" style="font-size: 150%">
                             <span class="inline-block group-hover:hidden">☆</span>
                         </span>
                     </li>

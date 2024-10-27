@@ -4,13 +4,58 @@ import (
 	"fmt"
 	"net/http"
 	"html/template"
+	"strings"
+	"os"
+	"log"
+	"github.com/joho/godotenv"
+	"encoding/json"
 )
 
+type TagObject struct {
+	Tags []string
+}
 type User struct {
 	Username string
 	Password string
-	FaboriteTags []string
+	FavoriteTags []TagObject
 }
+type JWTObject struct {
+	Token string
+}
+type Product struct {
+	ID string
+	Name string
+	Price float64
+	Tags []string
+	Images []string
+	Description string
+	Rating float64
+	URL string
+}
+type IndexInput struct {
+	Products []Product
+	User User
+	AllTags []TagObject
+}
+
+var USER_SERVICE_URL string
+var CATALOG_SERVICE_URL string
+
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+	USER_SERVICE_URL = os.Getenv("USER_SERVICE_URL")
+	if USER_SERVICE_URL == "" {
+		log.Fatalf("USER_SERVICE_URL not set in .env file")
+	}
+	CATALOG_SERVICE_URL = os.Getenv("CATALOG_SERVICE_URL")
+	if CATALOG_SERVICE_URL == "" {
+		log.Fatalf("CATALOG_SERVICE_URL not set in .env file")
+	}
+}
+
 
 const PORT = "8081"
 
@@ -25,6 +70,17 @@ func main() {
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	jwt := r.Header.Get("Authorization")
 
+	resp , err := http.Get(USER_SERVICE_URL+"/user")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+	var products []Product
+	if err := json.NewDecoder(resp.Body).Decode(&products); err != nil {
+		http.Error(w, "Failed to decode response", http.StatusInternalServerError)
+		return
+	}
 	if jwt == "" {
 		renderTemplate(w, "index.html", nil)
 	} else {
@@ -43,14 +99,42 @@ func GetRegister(w http.ResponseWriter, r *http.Request) {
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
-	fmt.Println(username, password)
-	renderTemplate(w, "catalog.html", nil)
+	resp, err := http.Post(USER_SERVICE_URL+"/login", "application/json", strings.NewReader(`{"username":"`+username+`","password":"`+password+`"}`))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+	var jwtObj JWTObject
+	if err := json.NewDecoder(resp.Body).Decode(&jwtObj); err != nil {
+		http.Error(w, "Failed to decode response", http.StatusInternalServerError)
+		return
+	}
+
+	// Set JWT token in a cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:  "jwt",
+		Value: jwtObj.Token,
+		Path:  "/",
+	})
+	// ----------------------------CATALOG PART--------------------------------
+	resp, err = http.Get(CATALOG_SERVICE_URL+"/catalog")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var products []Product
+	if err := json.NewDecoder(resp.Body).Decode(&products); err != nil {
+		http.Error(w, "Failed to decode response", http.StatusInternalServerError)
+		return
+	}
+	renderTemplate(w, "catalog.html", products)
 }
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
-	fmt.Println(username, password)
+	http.Post(USER_SERVICE_URL+"/register", "application/json", strings.NewReader(`{"username":"`+username+`","password":"`+password+`"}`))
 	renderTemplate(w, "login.html", nil)
 }
 
