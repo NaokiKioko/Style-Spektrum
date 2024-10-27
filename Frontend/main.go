@@ -85,56 +85,11 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Make The IndexInput object!!!
-	var user User
-	if (http.Cookie{Name: "username"}.Value != "") {
-		user = User{
-			Username:     http.Cookie{Name: "username"}.Value,
-			FavoriteTags: []Tag{},
-		}
-		tagnames := strings.Split(http.Cookie{Name: "favorite_tags"}.Value, ",")
-		tagfavoritecounts := strings.Split(http.Cookie{Name: "favorite_tag_counts"}.Value, ",")
-		for i, tagname := range tagnames {
-			tag := Tag{
-				Name: tagname,
-				FavoriteCount: func() int {
-					count, err := strconv.Atoi(tagfavoritecounts[i])
-					if err != nil {
-						return 0
-					}
-					return count
-				}(),
-			}
-			user.FavoriteTags = append(user.FavoriteTags, tag)
-		}
-		resp, err = http.Get(CATALOG_SERVICE_URL + "/tags")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		user = User{}
-	}
+	var user User = GetUserFromCookie(r)
 
-	var alltags []Tag
-	if err := json.NewDecoder(resp.Body).Decode(&alltags); err != nil {
-		http.Error(w, "Failed to decode response", http.StatusInternalServerError)
-		return
-	}
+	var alltags []Tag = getAllTags()
 	if user.Username != "" {
-		for x, tag := range alltags {
-			for _, favtag := range user.FavoriteTags {
-				if tag.Name == favtag.Name {
-					for i := range user.FavoriteTags {
-						if user.FavoriteTags[i].Name == tag.Name {
-							user.FavoriteTags[i].FavoriteCount = tag.FavoriteCount
-							break
-						}
-					}
-					// remove the favorite tag from alltags
-					alltags = append(alltags[:x], alltags[x+1:]...)
-				}
-			}
-		}
+		alltags = RemoveFavoriteTagsFromAllTags(alltags, user.FavoriteTags)
 	}
 
 	var indexInput IndexInput = IndexInput{products, user, alltags}
@@ -196,6 +151,73 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "login.html", nil)
 }
 
+func GetCatalog() []Product {
+	resp, err := http.Get(CATALOG_SERVICE_URL + "/catalog")
+	if err != nil {
+		log.Fatalf("Error getting catalog from catalog service")
+	}
+	defer resp.Body.Close()
+	var products []Product
+	if err := json.NewDecoder(resp.Body).Decode(&products); err != nil {
+		log.Fatalf("Failed to decode response")
+	}
+	return products
+}
+
+func GetUserFromCookie(r *http.Request) User {
+	var user User
+	if (http.Cookie{Name: "username"}.Value != "") {
+		user = User{
+			Username:     http.Cookie{Name: "username"}.Value,
+			FavoriteTags: []Tag{},
+		}
+		tagnames := strings.Split(http.Cookie{Name: "favorite_tags"}.Value, ",")
+		tagfavoritecounts := strings.Split(http.Cookie{Name: "favorite_tag_counts"}.Value, ",")
+		for i, tagname := range tagnames {
+			tag := Tag{
+				Name: tagname,
+				FavoriteCount: func() int {
+					count, err := strconv.Atoi(tagfavoritecounts[i])
+					if err != nil {
+						return 0
+					}
+					return count
+				}(),
+			}
+			user.FavoriteTags = append(user.FavoriteTags, tag)
+		}
+	} else {
+		user = User{}
+	}
+}
+
+func getAllTags() []Tag {
+	resp, err := http.Get(CATALOG_SERVICE_URL + "/tags")
+	if err != nil {
+		log.Fatalf("Error getting tags from catalog service")
+	}
+	defer resp.Body.Close()
+	var tags []Tag
+	if err := json.NewDecoder(resp.Body).Decode(&tags); err != nil {
+		log.Fatalf("Failed to decode response")
+	}
+	return tags
+}
+
+func RemoveFavoriteTagsFromAllTags(alltags []Tag, favtags []Tag) []Tag {
+	for x, tag := range alltags {
+		for _, favtag := range favtags {
+			if tag.Name == favtag.Name {
+				alltags = append(alltags[:x], alltags[x+1:]...)
+			}
+		}
+	}
+	return alltags
+}
+
+func GetCurrentUser(r *http.Request) User {
+	return User{}
+}
 func renderTemplate(w http.ResponseWriter, templateName string, data interface{}) {
 	t, err := template.ParseFiles("templates/" + templateName)
 	if err != nil {
