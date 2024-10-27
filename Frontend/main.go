@@ -19,8 +19,11 @@ type Tag struct {
 }
 type User struct {
 	Username     string
-	Password     string
 	FavoriteTags []Tag
+}
+type LoginObject struct {
+	Username string
+	Password string
 }
 type JWTObject struct {
 	Token string
@@ -43,6 +46,7 @@ type IndexInput struct {
 
 var USER_SERVICE_URL string
 var CATALOG_SERVICE_URL string
+const PORT = "8081"
 
 func init() {
 	err := godotenv.Load()
@@ -59,8 +63,6 @@ func init() {
 	}
 }
 
-const PORT = "8081"
-
 func main() {
 	http.Handle("/dist/", http.StripPrefix("/dist/", http.FileServer(http.Dir("dist"))))
 	fmt.Println("Server is running on port", PORT) // This will print before the server starts
@@ -69,6 +71,7 @@ func main() {
 		fmt.Println("Error starting server:", err)
 	}
 }
+
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	jwt := r.Header.Get("Authorization")
 
@@ -105,14 +108,14 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 func GetLogin(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "login.html", nil)
 }
+
 func GetRegister(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "register.html", nil)
 }
 
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
-	username := r.FormValue("username")
-	password := r.FormValue("password")
-	resp, err := http.Post(USER_SERVICE_URL+"/login", "application/json", strings.NewReader(`{"username":"`+username+`","password":"`+password+`"}`))
+	var loginObject LoginObject = LoginObject{r.FormValue("username"), r.FormValue("password")}
+	resp, err := http.Post(USER_SERVICE_URL+"/login", "application/json", strings.NewReader(`{"username":"`+loginObject.Username+`","password":"`+loginObject.Password+`"}`))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -189,6 +192,7 @@ func GetUserFromCookie(r *http.Request) User {
 	} else {
 		user = User{}
 	}
+	return user
 }
 
 func getAllTags() []Tag {
@@ -216,8 +220,22 @@ func RemoveFavoriteTagsFromAllTags(alltags []Tag, favtags []Tag) []Tag {
 }
 
 func GetCurrentUser(r *http.Request) User {
-	return User{}
+	jwt := r.Header.Get("Authorization")
+	if jwt == "" {
+		return User{}
+	}
+	resp, err := http.Get(USER_SERVICE_URL + "/me")
+	if err != nil {
+		log.Fatalf("Error getting user from user service")
+	}
+	defer resp.Body.Close()
+	var user User
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		log.Fatalf("Failed to decode response")
+	}
+	return user
 }
+
 func renderTemplate(w http.ResponseWriter, templateName string, data interface{}) {
 	t, err := template.ParseFiles("templates/" + templateName)
 	if err != nil {
