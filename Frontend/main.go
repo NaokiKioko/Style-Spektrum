@@ -81,6 +81,9 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to decode response", http.StatusInternalServerError)
 		return
 	}
+
+	// TODO: Make The IndexInput object!!!
+	
 	if jwt == "" {
 		renderTemplate(w, "index.html", nil)
 	} else {
