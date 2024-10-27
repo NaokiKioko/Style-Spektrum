@@ -19,7 +19,7 @@
                 <ul class="bg-[#e0e0e0] text-[#1a1a1a] ">
                     {{range .User.FavoriteTags}}
                         <li class="flex items-center outline bg-[#e0e0e0] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
-                            <a href="#" class="block px-4 py-2 rounded-md">{{.Tag}}</a>
+                            <a href="#" class="block px-4 py-2 rounded-md">{{.Name}}</a>
                             <span class="ml-2 cursor-pointer text-[#1a1a1a] hover:text-yellow transition-all" hx-post="/favorite/{{.User.Name}}" hx-swap="outerHTML" style="font-size: 150%">
                                 <span class="inline-block group-hover:hidden">★</span>
                             </span>

@@ -1,41 +1,44 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
-	"html/template"
-	"strings"
-	"os"
-	"log"
-	"github.com/joho/godotenv"
 	"encoding/json"
+	"fmt"
+	"html/template"
+	"log"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+
+	"github.com/joho/godotenv"
 )
 
-type TagObject struct {
-	Tags []string
+type Tag struct {
+	Name          string
+	FavoriteCount int
 }
 type User struct {
-	Username string
-	Password string
-	FavoriteTags []TagObject
+	Username     string
+	Password     string
+	FavoriteTags []Tag
 }
 type JWTObject struct {
 	Token string
 }
 type Product struct {
-	ID string
-	Name string
-	Price float64
-	Tags []string
-	Images []string
+	ID          string
+	Name        string
+	Price       float64
+	Tags        []string
+	Images      []string
 	Description string
-	Rating float64
-	URL string
+	Rating      float64
+	URL         string
 }
 type IndexInput struct {
 	Products []Product
-	User User
-	AllTags []TagObject
+	User     User
+	AllTags  []Tag
 }
 
 var USER_SERVICE_URL string
@@ -56,21 +59,20 @@ func init() {
 	}
 }
 
-
 const PORT = "8081"
 
 func main() {
 	http.Handle("/dist/", http.StripPrefix("/dist/", http.FileServer(http.Dir("dist"))))
-    fmt.Println("Server is running on port", PORT) // This will print before the server starts
-    http.HandleFunc("/", IndexHandler)
-    if err := http.ListenAndServe(fmt.Sprint(":", PORT), nil); err != nil {
-        fmt.Println("Error starting server:", err)
-    }
+	fmt.Println("Server is running on port", PORT) // This will print before the server starts
+	http.HandleFunc("/", IndexHandler)
+	if err := http.ListenAndServe(fmt.Sprint(":", PORT), nil); err != nil {
+		fmt.Println("Error starting server:", err)
+	}
 }
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	jwt := r.Header.Get("Authorization")
 
-	resp , err := http.Get(USER_SERVICE_URL+"/user")
+	resp, err := http.Get(USER_SERVICE_URL + "/user")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -83,11 +85,64 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Make The IndexInput object!!!
-	
-	if jwt == "" {
-		renderTemplate(w, "index.html", nil)
+	var user User
+	if (http.Cookie{Name: "username"}.Value != "") {
+		user = User{
+			Username:     http.Cookie{Name: "username"}.Value,
+			FavoriteTags: []Tag{},
+		}
+		tagnames := strings.Split(http.Cookie{Name: "favorite_tags"}.Value, ",")
+		tagfavoritecounts := strings.Split(http.Cookie{Name: "favorite_tag_counts"}.Value, ",")
+		for i, tagname := range tagnames {
+			tag := Tag{
+				Name: tagname,
+				FavoriteCount: func() int {
+					count, err := strconv.Atoi(tagfavoritecounts[i])
+					if err != nil {
+						return 0
+					}
+					return count
+				}(),
+			}
+			user.FavoriteTags = append(user.FavoriteTags, tag)
+		}
+		resp, err = http.Get(CATALOG_SERVICE_URL + "/tags")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	} else {
-		renderTemplate(w, "index.html", nil)
+		user = User{}
+	}
+
+	var alltags []Tag
+	if err := json.NewDecoder(resp.Body).Decode(&alltags); err != nil {
+		http.Error(w, "Failed to decode response", http.StatusInternalServerError)
+		return
+	}
+	if user.Username != "" {
+		for x, tag := range alltags {
+			for _, favtag := range user.FavoriteTags {
+				if tag.Name == favtag.Name {
+					for i := range user.FavoriteTags {
+						if user.FavoriteTags[i].Name == tag.Name {
+							user.FavoriteTags[i].FavoriteCount = tag.FavoriteCount
+							break
+						}
+					}
+					// remove the favorite tag from alltags
+					alltags = append(alltags[:x], alltags[x+1:]...)
+				}
+			}
+		}
+	}
+
+	var indexInput IndexInput = IndexInput{products, user, alltags}
+
+	if jwt == "" {
+		renderTemplate(w, "index.html", indexInput)
+	} else {
+		renderTemplate(w, "index.html", indexInput)
 		fmt.Println(jwt)
 	}
 }
@@ -121,7 +176,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		Path:  "/",
 	})
 	// ----------------------------CATALOG PART--------------------------------
-	resp, err = http.Get(CATALOG_SERVICE_URL+"/catalog")
+	resp, err = http.Get(CATALOG_SERVICE_URL + "/catalog")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
