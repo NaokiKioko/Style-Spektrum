@@ -68,6 +68,11 @@ app.delete('/catalog/:id', async (req, res) => {
     res.sendStatus(202);
 });
 
+app.get('/tags', async (req, res) => {
+    const tags = await bal.GetTags();
+    res.status(200).send(tags);
+});
+
 app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
 });
