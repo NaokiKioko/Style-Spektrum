@@ -51,5 +51,6 @@ module.exports = {
     PostCatalog,
     PatchCatalog,
     DeleteCatalog,
-    GetTags
+    GetTags,
+    GetAllTags
 }
