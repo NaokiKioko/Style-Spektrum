@@ -34,6 +34,11 @@ app.get('/catalog/tags/:tags', async (req, res) => {
     res.status(200).send(catalogs);
 });
 
+app.get('/catalog/tags', async (req, res) => {
+    const catalogs = await bal.GetAllTags([]);
+    res.status(200).send(catalogs);
+});
+
 app.post('/catalog', async (req, res) => {
     await bal.PostCatalog(req.body);
     res.sendStatus(201);
@@ -66,6 +71,11 @@ app.delete('/catalog/:id', async (req, res) => {
         return;
     }
     res.sendStatus(202);
+});
+
+app.get('/tags', async (req, res) => {
+    const tags = await bal.GetTags();
+    res.status(200).send(tags);
 });
 
 app.listen(port, () => {
