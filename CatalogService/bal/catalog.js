@@ -12,6 +12,18 @@ async function GetCatalog(id) {
 async function GetCatalogbyTags(tags) {
     return await dal.Interface("get", "catalog", {tags: { $all: tags }});
 }
+async function GetAllTags(tags) {
+    let products = await dal.Interface("get", "catalog", {});
+    let tagsArray = [];
+    products.forEach(product => {
+        product.tags.forEach(tag => {
+            if (!tagsArray.includes(tag)) {
+                tagsArray.push(tag);
+            }
+        });
+    });
+    return {"tags":tagsArray};
+}
 
 async function PostCatalog(catalog) {
     return await dal.Interface("post", "catalog", catalog);
