@@ -39,17 +39,17 @@ type Product struct {
 	URL         string
 }
 type IndexInput struct {
-	Products []Product
 	User     User
 	AllTags  []Tag
 }
 
 var USER_SERVICE_URL string
 var CATALOG_SERVICE_URL string
+
 const PORT = "8081"
 
 func init() {
-	err := godotenv.Load()
+	err := godotenv.Load("../.env")
 	if err != nil {
 		log.Fatalf("Error loading .env file")
 	}
@@ -64,7 +64,6 @@ func init() {
 }
 
 func main() {
-	http.Handle("/dist/", http.StripPrefix("/dist/", http.FileServer(http.Dir("dist"))))
 	fmt.Println("Server is running on port", PORT) // This will print before the server starts
 	http.HandleFunc("/", IndexHandler)
 	if err := http.ListenAndServe(fmt.Sprint(":", PORT), nil); err != nil {
@@ -73,36 +72,32 @@ func main() {
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	jwt := r.Header.Get("Authorization")
-
-	resp, err := http.Get(USER_SERVICE_URL + "/user")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer resp.Body.Close()
-	var products []Product
-	if err := json.NewDecoder(resp.Body).Decode(&products); err != nil {
-		http.Error(w, "Failed to decode response", http.StatusInternalServerError)
-		return
-	}
-
-	// TODO: Make The IndexInput object!!!
 	var user User = GetUserFromCookie(r)
-
+	if user.Username == "" {
+		var jwt = r.Header.Get("authorization")
+		if jwt != "" {
+			resp := MakehttpGetRequest(USER_SERVICE_URL+"/me", jwt)
+			if resp.StatusCode == http.StatusOK {
+				if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+					log.Fatalf("Failed to decode response")
+				}
+				r.Header.Set("username", user.Username)
+				favtagNames := []string{}
+				for _, tag := range user.FavoriteTags {
+					favtagNames = append(favtagNames, tag.Name)
+				}
+				r.Header.Set("favorite_tags", strings.Join(favtagNames, ","))
+			}
+		}
+	}
 	var alltags []Tag = getAllTags()
 	if user.Username != "" {
 		alltags = RemoveFavoriteTagsFromAllTags(alltags, user.FavoriteTags)
 	}
 
-	var indexInput IndexInput = IndexInput{products, user, alltags}
+	var indexInput IndexInput = IndexInput{user, alltags}
 
-	if jwt == "" {
-		renderTemplate(w, "index.html", indexInput)
-	} else {
-		renderTemplate(w, "index.html", indexInput)
-		fmt.Println(jwt)
-	}
+	renderTemplate(w, "index.html", indexInput)
 }
 
 func GetLogin(w http.ResponseWriter, r *http.Request) {
@@ -234,6 +229,19 @@ func GetCurrentUser(r *http.Request) User {
 		log.Fatalf("Failed to decode response")
 	}
 	return user
+}
+
+func MakehttpGetRequest(url string, jwt string) *http.Response {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Fatalf("Error creating request")
+	}
+	req.Header.Set("authorization", jwt)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatalf("Error making request")
+	}
+	return resp
 }
 
 func renderTemplate(w http.ResponseWriter, templateName string, data interface{}) {
