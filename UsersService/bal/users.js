@@ -10,7 +10,7 @@ async function registerUser(email, password) {
         // register user
         password = security.hashPassword(password);
         try {
-            await dal.Interface("post", "Users", { email, password, role: "user" }).then((code) => {
+            await dal.Interface("post", "Users", { email, password, role: "user", favoriteTags: []}).then((code) => {
                 endcode = code;
             });
         }
