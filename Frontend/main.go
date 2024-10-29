@@ -90,7 +90,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	var alltags []Tag = getAllTags()
+	var alltags []Tag = GetAllTags()
 	if user.Username != "" {
 		alltags = RemoveFavoriteTagsFromAllTags(alltags, user.FavoriteTags)
 	}
@@ -190,7 +190,7 @@ func GetUserFromCookie(r *http.Request) User {
 	return user
 }
 
-func getAllTags() []Tag {
+func GetAllTags() []Tag {
 	resp, err := http.Get(CATALOG_SERVICE_URL + "/tags")
 	if err != nil {
 		log.Fatalf("Error getting tags from catalog service")
