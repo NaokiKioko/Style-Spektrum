@@ -20,14 +20,6 @@ app.get('/catalog/tags/:tags', async (req, res) => {
     res.status(200).send(catalogs);
 });
 
-app.get('/catalog/tags', async (req, res) => {
-    const catalogs = await bal.GetTags([]);
-    for (let i = 0; i < catalogs.length; i++) {
-        delete catalogs[i]._id;
-    }
-    res.status(200).send(catalogs);
-});
-
 app.get('/catalog/:id', async (req, res) => {
     let id = req.params.id;
     const catalogs = await bal.GetCatalog(id);
@@ -78,8 +70,11 @@ app.delete('/catalog/:id', async (req, res) => {
 });
 
 app.get('/tags', async (req, res) => {
-    const tags = await bal.GetTags();
-    res.status(200).send(tags);
+        const catalogs = await bal.GetTags([]);
+    for (let i = 0; i < catalogs.length; i++) {
+        delete catalogs[i]._id;
+    }
+    res.status(200).send(catalogs);
 });
 
 app.listen(port, () => {
