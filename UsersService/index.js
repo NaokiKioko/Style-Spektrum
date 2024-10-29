@@ -36,8 +36,6 @@ app.post('/login', async (req, res) => {
 
 app.get('/me', auth.authenticateToken, async (req, res) => {
     let user = await bal.GetUserByEmail(req.user.email);
-    delete user.password
-    delete user._id
     res.status(200).send(user);
 });
 

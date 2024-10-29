@@ -79,8 +79,29 @@ function ValidateEmail(email) {
     return isValid ? true : false;
 }
 
-function GetUserByEmail(email) {
-    return dal.Interface("get", "Users", { email });
+async function GetUserByEmail(email) {
+    let user
+    await dal.Interface("get", "Users", { "email":email }).then((users) => {
+        if (users.length === 0) {
+            return 404;
+        }
+        user = users[0];
+    });
+    let tags = [];
+    if (user.favoriteTags.length > 0) {
+        await dal.Interface("get", "Tags", { name: { $in: user.favoriteTags } }).then((tag) => {
+            tags = tag;
+        });
+    }
+    for (let i = 0; i < tags.length; i++) {
+        delete tags[i]._id;
+    }
+    return {
+        email: user.email,
+        role: user.role,
+        favoriteTags: tags
+    };
+    
 }
 
 module.exports = {
