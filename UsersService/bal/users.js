@@ -79,8 +79,13 @@ function ValidateEmail(email) {
     return isValid ? true : false;
 }
 
+function GetUserByEmail(email) {
+    return dal.Interface("get", "Users", { email });
+}
+
 module.exports = {
     registerUser,
     login,
-    deleteAccount
+    deleteAccount,
+    GetUserByEmail
 }
