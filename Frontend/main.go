@@ -22,6 +22,7 @@ type User struct {
 	Username     string
 	Email        string
 	FavoriteTags []Tag
+	Role 	   string
 }
 type LoginObject struct {
 	Email    string
