@@ -12,16 +12,7 @@ async function GetCatalog(id) {
 async function GetCatalogbyTags(tags) {
     return await dal.Interface("get", "catalog", {tags: { $all: tags }});
 }
-async function GetAllTags(tags) {
-    let tags = await dal.Interface("get", "tag", {});
-    if (tags === 500) {
-        return 500;
-    }
-    if (tags.length === 0) {
-        return {"tags":[]};
-    }
-    return tags;
-}
+
 
 async function PostCatalog(catalog) {
     let code = await dal.Interface("post", "catalog", catalog);
@@ -74,5 +65,4 @@ module.exports = {
     PatchCatalog,
     DeleteCatalog,
     GetTags,
-    GetAllTags
 }
