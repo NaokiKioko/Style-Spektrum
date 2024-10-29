@@ -9,7 +9,7 @@
     <title>Style Spektrum</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-white text-black">
+<body id="PageBody" class="bg-white text-black">
     <!-- Main Layout with Sidebar and Content -->
     <div class="flex">
     <!-- Sidebar for Styles -->
@@ -17,10 +17,10 @@
             <h2 class="text-xl text-[#e0e0e0] text-center font-semibold my-2">Your Styles</h2>
             {{if .User.FavoriteTags}}
                 <ul class="bg-[#e0e0e0] text-[#1a1a1a] ">
-                    {{range .User.FavoriteTags}}
+                    {{range .FavoriteTags}}
                         <li class="flex items-center outline bg-[#e0e0e0] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
                             <a href="#" class="block px-4 py-2 rounded-md">{{.Name}}</a>
-                            <span class="ml-2 cursor-pointer text-[#1a1a1a] hover:text-yellow transition-all" hx-post="/favorite/{{.User.Name}}" hx-swap="outerHTML" style="font-size: 150%">
+                            <span class="ml-2 cursor-pointer text-[#1a1a1a] hover:text-yellow transition-all" hx-post="/favorite/{{.Name}}" hx-swap="outerHTML" style="font-size: 150%">
                                 <span class="inline-block group-hover:hidden">★</span>
                             </span>
                         </li>
@@ -50,9 +50,9 @@
             <div class="justify-center">
                 <div class="flex justify-end bg-[#1a1a1a] space-x-4 back tp-1">
                     {{ if .User.Username}}
-                        <a href="#" class="text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">Login</a>
-                        <p class="text-[#e0e0e0]">/</p>
-                        <a href="#" class=" text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">{{.User.Username}}</a>
+                    <a href="#" class=" text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">{{.User.Username}}</a>
+                    <p class="text-[#e0e0e0]">/</p>
+                    <a href="#" hx-get="/logout" class="text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">Logout</a>
                     {{ else }}
                         <a href="#" hx-get="/login" hx-target="#MainView" class="text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">LOGIN</a>
                         <p class="text-[#e0e0e0]">/</p>

@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -22,7 +21,7 @@ type User struct {
 	Username     string
 	Email        string
 	FavoriteTags []Tag
-	Role 	   string
+	Role         string
 }
 type LoginObject struct {
 	Email    string
@@ -43,12 +42,18 @@ type Product struct {
 }
 type IndexInput struct {
 	User    User
+	FavoriteTags []Tag
 	AllTags []Tag
 }
 type HtmlError struct {
 	Message    string
 	StatusCode int
-	Endpoint   string
+	Error bool
+}
+
+type LoginPageData struct {
+    Login *LoginObject
+    Error *HtmlError
 }
 
 var USER_SERVICE_URL string
@@ -76,6 +81,7 @@ func main() {
 	http.HandleFunc("/", IndexHandler)
 	http.HandleFunc("/login", GetLogin)
 	http.HandleFunc("/register", GetRegister)
+	http.HandleFunc("/logout", HandleLogout)
 	http.HandleFunc("/handle-login", HandleLogin)
 	http.HandleFunc("/handle-register", HandleRegister)
 
@@ -85,24 +91,12 @@ func main() {
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	var user User = GetUserFromCookie(r)
-	if user.Email == "" {
-		var jwt = r.Header.Get("authorization")
-		if jwt != "" {
-			resp, err := MakehttpGetRequest(USER_SERVICE_URL+"/me", jwt)
-			if err != nil {
-				if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
-					log.Fatalf("Failed to decode response")
-				}
-				user.Username = strings.Split(user.Email, "@")[0]
-				r.Header.Set("email", user.Email)
-				favtagNames := []string{}
-				for _, tag := range user.FavoriteTags {
-					favtagNames = append(favtagNames, tag.Name)
-				}
-				r.Header.Set("favorite_tags", strings.Join(favtagNames, ","))
-			}
-		}
+	var user, _, err = GetUserFromCookies(r)
+	if err != nil {
+		user = User{}
+	}
+	if (len(user.FavoriteTags) == 1 && user.FavoriteTags[0].Name == "") {
+		user.FavoriteTags = []Tag{}
 	}
 	var alltags []Tag = GetAllTags()
 	if user.Email != "" {
@@ -110,13 +104,13 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	alltags = sortTagsByFavoriteCount(alltags)
 
-	var indexInput IndexInput = IndexInput{user, alltags}
+	var indexInput IndexInput = IndexInput{user, user.FavoriteTags, alltags}
 
 	renderTemplate(w, "index.html", indexInput)
 }
 
 func GetLogin(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, "login.html", LoginObject{"", ""})
+	renderTemplate(w, "login.html", nil)
 }
 
 func GetRegister(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +125,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	var loginObject LoginObject = LoginObject{r.FormValue("email"), r.FormValue("password")}
 	resp, err := MakehttpPostRequest(USER_SERVICE_URL+"/login", "", strings.NewReader(`{"email":"`+loginObject.Email+`","password":"`+loginObject.Password+`"}`))
 	if err != nil {
-		renderTemplate(w, "error.html", HtmlError{"Failed to login", http.StatusInternalServerError, "/login"})
+		renderTemplate(w, "login.html", LoginPageData{&loginObject, &HtmlError{"Failed to login", http.StatusInternalServerError, true}})
 		return
 	}
 	defer resp.Body.Close()
@@ -140,56 +134,19 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	resp, err = MakehttpGetRequest(USER_SERVICE_URL+"/me", jwtObj.Token)
 	if err != nil || resp.StatusCode == http.StatusUnauthorized {
-		renderTemplate(w, "error.html", HtmlError{"Failed to get you", http.StatusInternalServerError, "/login"})
+		renderTemplate(w, "login.html", LoginPageData{&loginObject, &HtmlError{"Incorrect JWT? (This shoulden't happen)", http.StatusInternalServerError, true}})
 		return
 	}
 	var user User
 	ResponseToObj(resp, &user)
-	// Set JWT token in a cookie
-	http.SetCookie(w, &http.Cookie{
-		Name:  "jwt",
-		Value: jwtObj.Token,
-		Path:  "/",
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:  "email",
-		Value: user.Email,
-		Path:  "/",
-	})
-	http.SetCookie(w, &http.Cookie{
-		Name:  "username",
-		Value: strings.Split(user.Email, "@")[0],
-		Path:  "/",
-	})
-	// Set favorite tags in a cookie
-	if len(user.FavoriteTags) != 0 {
-		favtagNames := []string{}
-		for _, tag := range user.FavoriteTags {
-			favtagNames = append(favtagNames, tag.Name)
-		}
-		favtagCounts := []string{}
-		for _, tag := range user.FavoriteTags {
-			favtagCounts = append(favtagCounts, strconv.Itoa(tag.FavoriteCount))
-		}
-		http.SetCookie(w, &http.Cookie{
-			Name:  "favorite_tags",
-			Value: strings.Join(favtagNames, ","),
-			Path:  "/",
-		})
-		http.SetCookie(w, &http.Cookie{
-			Name:  "favorite_tag_counts",
-			Value: strings.Join(favtagCounts, ","),
-			Path:  "/",
-		})
-	}
-	// ----------------------------Tags PART--------------------------------
-	var alltags []Tag = GetAllTags()
-	if len(user.FavoriteTags) != 0 {
-		alltags = RemoveFavoriteTagsFromAllTags(alltags, user.FavoriteTags)
-	}
-	indexInput := IndexInput{user, alltags}
+	// Set users cookie's
+	SetUsersCookies(w, user, jwtObj.Token)
+	w.Header().Set("HX-Redirect", "/")
+}
 
-	renderTemplate(w, "index.html", indexInput)
+func HandleLogout(w http.ResponseWriter, r *http.Request) {
+	ClearUsersCookies(w)
+	w.Header().Set("HX-Redirect", "/")
 }
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
@@ -202,10 +159,10 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	// _, err := http.Post(USER_SERVICE_URL+"/register", "application/json", strings.NewReader(`{"email":"`+email+`","password":"`+password+`"}`))
 	_, err := MakehttpPostRequest(USER_SERVICE_URL+"/register", "", strings.NewReader(`{"email":"`+email+`","password":"`+password+`"}`))
 	if err != nil {
-		renderTemplate(w, "error.html", HtmlError{"Failed to register", http.StatusInternalServerError, "/register"})
+		renderTemplate(w, "error.html", HtmlError{"Failed to register", http.StatusInternalServerError, true})
 		return
 	}
-	renderTemplate(w, "login.html", LoginObject{email, password})
+	renderTemplate(w, "login.html", LoginPageData{&LoginObject{email, password}, nil})
 }
 
 func GetCatalog() []Product {
@@ -221,33 +178,97 @@ func GetCatalog() []Product {
 	return products
 }
 
-func GetUserFromCookie(r *http.Request) User {
-	var user User
-	if (http.Cookie{Name: "email"}.Value != "") {
-		user = User{
-			Username:     http.Cookie{Name: "username"}.Value,
-			Email:        http.Cookie{Name: "email"}.Value,
-			FavoriteTags: []Tag{},
-		}
-		tagnames := strings.Split(http.Cookie{Name: "favorite_tags"}.Value, ",")
-		tagfavoritecounts := strings.Split(http.Cookie{Name: "favorite_tag_counts"}.Value, ",")
-		for i, tagname := range tagnames {
-			tag := Tag{
-				Name: tagname,
-				FavoriteCount: func() int {
-					count, err := strconv.Atoi(tagfavoritecounts[i])
-					if err != nil {
-						return 0
-					}
-					return count
-				}(),
-			}
-			user.FavoriteTags = append(user.FavoriteTags, tag)
-		}
-	} else {
-		user = User{}
+func SetUsersCookies(w http.ResponseWriter, user User, jwt string) {
+	// Gather the cookies in a slice
+	cookies := []http.Cookie{
+		{
+			Name:  "JWT",
+			Value: jwt,
+		},
+		{
+			Name:  "Email",
+			Value: user.Email,
+		},
+		{
+			Name:  "Username",
+			Value: strings.Split(user.Email, "@")[0],
+		},
 	}
-	return user
+
+	// Join favorite tag names and add as a cookie
+	favtagNames := make([]string, len(user.FavoriteTags))
+	for i, tag := range user.FavoriteTags {
+		favtagNames[i] = tag.Name
+	}
+	cookies = append(cookies, http.Cookie{
+		Name:  "FavoriteTags",
+		Value: strings.Join(favtagNames, ","),
+	})
+
+	// Set all cookies in a loop
+	for _, cookie := range cookies {
+		http.SetCookie(w, &cookie)
+	}
+}
+func GetUserFromCookies(r *http.Request) (User, string, error) {
+	var user User
+	var jwt string
+
+	// Get JWT cookie
+	jwtCookie, err := r.Cookie("JWT")
+	if err != nil {
+		return user, jwt, err
+	}
+	jwt = jwtCookie.Value
+
+	// Get Email cookie
+	emailCookie, err := r.Cookie("Email")
+	if err != nil {
+		return user, jwt, err
+	}
+	user.Email = emailCookie.Value
+
+	// Get Username cookie
+	usernameCookie, err := r.Cookie("Username")
+	if err != nil {
+		return user, jwt, err
+	}
+	user.Username = usernameCookie.Value
+
+	// Get FavoriteTags cookie
+	favTagsCookie, err := r.Cookie("FavoriteTags")
+	if err != nil {
+		return user, jwt, err
+	}
+	favTagNames := strings.Split(favTagsCookie.Value, ",")
+	for _, name := range favTagNames {
+		user.FavoriteTags = append(user.FavoriteTags, Tag{Name: name})
+	}
+	return user, jwt, nil
+}
+func ClearUsersCookies(w http.ResponseWriter) {
+	// Gather the cookies in a slice
+	cookies := []http.Cookie{
+		{
+			Name:   "JWT",
+			MaxAge: -1,
+		},
+		{
+			Name:   "Email",
+			MaxAge: -1,
+		},
+		{
+			Name:   "Username",
+			MaxAge: -1,
+		},
+		{
+			Name:   "FavoriteTags",
+			MaxAge: -1,
+		},
+	}
+	for _, cookie := range cookies {
+		http.SetCookie(w, &cookie)
+	}
 }
 
 func GetAllTags() []Tag {
@@ -340,6 +361,8 @@ func sortTagsByFavoriteCount(tags []Tag) []Tag {
 	})
 	return tags
 }
+
+
 func renderTemplate(w http.ResponseWriter, templateName string, data interface{}) {
 	t, err := template.ParseFiles("templates/" + templateName)
 	if err != nil {
