@@ -1,0 +1,12 @@
+<div class="col-span-5"><br><br><br></div>
+<div class=""></div>
+<div class="col-span-3 bg-[#1a1a1a] text-[#e0e0e0] rounded-lg shadow-lg p-6">
+    <h1 class="text-4xl font-semibold text-center text-[#e0e0e0] mb-6">ERROR</h1>
+    <div id="loginForm" hx-post="/handle-login" hx-target="#MainView" class="flex flex-col space-y-4">
+        <p> {{.Message}} </p>
+        <br>
+        <p> {{.StatusCode}} </p>
+        <button type="submit" hx-get="{{.Endpoint}}" class="bg-[#1a1a1a] text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a] transition-all rounded-md p-2 font-semibold">Login</button>
+    </div>
+</div>
+<div class=""></div>

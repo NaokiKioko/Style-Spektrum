@@ -4,10 +4,9 @@
     <h1 class="text-4xl font-semibold text-center text-[#e0e0e0] mb-6">Login</h1>
     <form id="loginForm" hx-post="/handle-login" hx-target="#MainView" class="flex flex-col space-y-4">
         <label for="email" class="text-lg text-[#e0e0e0]">Email</label>
-        <input type="email" id="email" name="email" class="border border-gray-500 rounded-md p-2 bg-[#e0e0e0] text-[#1a1a1a] placeholder-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#e0e0e0]">
-        
+        <input type="email" content="{{.Email}}" id="email" name="email" class="border border-gray-500 rounded-md p-2 bg-[#e0e0e0] text-[#1a1a1a] placeholder-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#e0e0e0]">
         <label for="password" class="text-lg text-[#e0e0e0]">Password</label>
-        <input type="password" id="password" name="password" class="border border-gray-500 rounded-md p-2 bg-[#e0e0e0] text-[#1a1a1a] placeholder-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#e0e0e0]">
+        <input type="password" content="{{.Password}}" id="password" name="password" class="border border-gray-500 rounded-md p-2 bg-[#e0e0e0] text-[#1a1a1a] placeholder-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#e0e0e0]">
         <br>
         <button type="submit" class="bg-[#1a1a1a] text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a] transition-all rounded-md p-2 font-semibold">Login</button>
     </form>

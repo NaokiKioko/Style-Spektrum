@@ -19,11 +19,12 @@ type Tag struct {
 	FavoriteCount int
 }
 type User struct {
-	Email     string
+	Username     string
+	Email        string
 	FavoriteTags []Tag
 }
 type LoginObject struct {
-	Email string
+	Email    string
 	Password string
 }
 type JWTObject struct {
@@ -40,8 +41,13 @@ type Product struct {
 	URL         string
 }
 type IndexInput struct {
-	User     User
-	AllTags  []Tag
+	User    User
+	AllTags []Tag
+}
+type HtmlError struct {
+	Message    string
+	StatusCode int
+	Endpoint   string
 }
 
 var USER_SERVICE_URL string
@@ -71,7 +77,7 @@ func main() {
 	http.HandleFunc("/register", GetRegister)
 	http.HandleFunc("/handle-login", HandleLogin)
 	http.HandleFunc("/handle-register", HandleRegister)
-	
+
 	if err := http.ListenAndServe(fmt.Sprint(":", PORT), nil); err != nil {
 		fmt.Println("Error starting server:", err)
 	}
@@ -82,11 +88,12 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	if user.Email == "" {
 		var jwt = r.Header.Get("authorization")
 		if jwt != "" {
-			resp := MakehttpGetRequest(USER_SERVICE_URL+"/me", jwt)
-			if resp.StatusCode == http.StatusOK {
+			resp, err := MakehttpGetRequest(USER_SERVICE_URL+"/me", jwt)
+			if err != nil {
 				if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
 					log.Fatalf("Failed to decode response")
 				}
+				user.Username = strings.Split(user.Email, "@")[0]
 				r.Header.Set("email", user.Email)
 				favtagNames := []string{}
 				for _, tag := range user.FavoriteTags {
@@ -108,7 +115,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetLogin(w http.ResponseWriter, r *http.Request) {
-	renderTemplate(w, "login.html", nil)
+	renderTemplate(w, "login.html", LoginObject{"", ""})
 }
 
 func GetRegister(w http.ResponseWriter, r *http.Request) {
@@ -121,36 +128,67 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var loginObject LoginObject = LoginObject{r.FormValue("email"), r.FormValue("password")}
-	resp, err := http.Post(USER_SERVICE_URL+"/login", "application/json", strings.NewReader(`{"email":"`+loginObject.Email+`","password":"`+loginObject.Password+`"}`))
+	resp, err := MakehttpPostRequest(USER_SERVICE_URL+"/login", "", strings.NewReader(`{"email":"`+loginObject.Email+`","password":"`+loginObject.Password+`"}`))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		renderTemplate(w, "error.html", HtmlError{"Failed to login", http.StatusInternalServerError, "/login"})
 		return
 	}
 	defer resp.Body.Close()
 	var jwtObj JWTObject
-	if err := json.NewDecoder(resp.Body).Decode(&jwtObj); err != nil {
-		http.Error(w, "Failed to decode response", http.StatusInternalServerError)
+	ResponseToObj(resp, &jwtObj)
+
+	resp, err = MakehttpGetRequest(USER_SERVICE_URL+"/me", jwtObj.Token)
+	if err != nil || resp.StatusCode == http.StatusUnauthorized {
+		renderTemplate(w, "error.html", HtmlError{"Failed to get you", http.StatusInternalServerError, "/login"})
 		return
 	}
-
+	var user User
+	ResponseToObj(resp, &user)
 	// Set JWT token in a cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:  "jwt",
 		Value: jwtObj.Token,
 		Path:  "/",
 	})
-	// ----------------------------CATALOG PART--------------------------------
-	resp, err = http.Get(CATALOG_SERVICE_URL + "/catalog")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	http.SetCookie(w, &http.Cookie{
+		Name:  "email",
+		Value: user.Email,
+		Path:  "/",
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:  "username",
+		Value: strings.Split(user.Email, "@")[0],
+		Path:  "/",
+	})
+	// Set favorite tags in a cookie
+	if len(user.FavoriteTags) != 0 {
+		favtagNames := []string{}
+		for _, tag := range user.FavoriteTags {
+			favtagNames = append(favtagNames, tag.Name)
+		}
+		favtagCounts := []string{}
+		for _, tag := range user.FavoriteTags {
+			favtagCounts = append(favtagCounts, strconv.Itoa(tag.FavoriteCount))
+		}
+		http.SetCookie(w, &http.Cookie{
+			Name:  "favorite_tags",
+			Value: strings.Join(favtagNames, ","),
+			Path:  "/",
+		})
+		http.SetCookie(w, &http.Cookie{
+			Name:  "favorite_tag_counts",
+			Value: strings.Join(favtagCounts, ","),
+			Path:  "/",
+		})
 	}
-	var products []Product
-	if err := json.NewDecoder(resp.Body).Decode(&products); err != nil {
-		http.Error(w, "Failed to decode response", http.StatusInternalServerError)
-		return
+	// ----------------------------Tags PART--------------------------------
+	var alltags []Tag = GetAllTags()
+	if len(user.FavoriteTags) != 0 {
+		alltags = RemoveFavoriteTagsFromAllTags(alltags, user.FavoriteTags)
 	}
-	renderTemplate(w, "catalog.html", products)
+	indexInput := IndexInput{user, alltags}
+
+	renderTemplate(w, "index.html", indexInput)
 }
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
@@ -160,8 +198,13 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	email := r.FormValue("email")
 	password := r.FormValue("password")
-	http.Post(USER_SERVICE_URL+"/register", "application/json", strings.NewReader(`{"email":"`+email+`","password":"`+password+`"}`))
-	renderTemplate(w, "login.html", nil)
+	// _, err := http.Post(USER_SERVICE_URL+"/register", "application/json", strings.NewReader(`{"email":"`+email+`","password":"`+password+`"}`))
+	_, err := MakehttpPostRequest(USER_SERVICE_URL+"/register", "", strings.NewReader(`{"email":"`+email+`","password":"`+password+`"}`))
+	if err != nil {
+		renderTemplate(w, "error.html", HtmlError{"Failed to register", http.StatusInternalServerError, "/register"})
+		return
+	}
+	renderTemplate(w, "login.html", LoginObject{email, password})
 }
 
 func GetCatalog() []Product {
@@ -181,7 +224,8 @@ func GetUserFromCookie(r *http.Request) User {
 	var user User
 	if (http.Cookie{Name: "email"}.Value != "") {
 		user = User{
-			Email:     http.Cookie{Name: "email"}.Value,
+			Username:     http.Cookie{Name: "username"}.Value,
+			Email:        http.Cookie{Name: "email"}.Value,
 			FavoriteTags: []Tag{},
 		}
 		tagnames := strings.Split(http.Cookie{Name: "favorite_tags"}.Value, ",")
@@ -246,17 +290,47 @@ func GetCurrentUser(r *http.Request) User {
 	return user
 }
 
-func MakehttpGetRequest(url string, jwt string) *http.Response {
+func MakehttpGetRequest(url string, jwt string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatalf("Error creating request")
 	}
-	req.Header.Set("authorization", jwt)
+	if jwt != "" {
+		req.Header.Add("authorization", "Bearer "+jwt)
+	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Fatalf("Error making request")
 	}
-	return resp
+	return resp, err
+}
+
+func MakehttpPostRequest(url string, jwt string, body *strings.Reader) (*http.Response, error) {
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	// Add Authorization header if jwt is provided
+	if jwt != "" {
+		req.Header.Add("authorization", "Bearer "+jwt)
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	// Optionally, check if the response was successful
+	if resp.StatusCode != http.StatusOK {
+		return resp, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+	return resp, nil
+}
+
+func ResponseToObj(resp *http.Response, obj interface{}) {
+	if err := json.NewDecoder(resp.Body).Decode(obj); err != nil {
+		log.Fatalf("Failed to decode response")
+	}
 }
 
 func sortTagsByFavoriteCount(tags []Tag) []Tag {
