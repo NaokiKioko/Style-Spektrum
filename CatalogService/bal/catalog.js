@@ -14,6 +14,12 @@ async function GetCatalogbyTags(tags) {
 }
 async function GetAllTags(tags) {
     let products = await dal.Interface("get", "catalog", {});
+    if (products === 500) {
+        return 500;
+    }
+    if (products.length === 0) {
+        return {"tags":[]};
+    }
     let tagsArray = [];
     products.forEach(product => {
         product.tags.forEach(tag => {
@@ -51,5 +57,6 @@ module.exports = {
     PostCatalog,
     PatchCatalog,
     DeleteCatalog,
-    GetTags
+    GetTags,
+    GetAllTags
 }

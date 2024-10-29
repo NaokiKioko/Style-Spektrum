@@ -14,6 +14,17 @@ app.get('/catalogs', async (req, res) => {
     res.status(200).send(catalogs);
 });
 
+app.get('/catalog/tags/:tags', async (req, res) => {
+    let tags = req.params.tags.split(',');
+    const catalogs = await bal.GetCatalogbyTags(tags);
+    res.status(200).send(catalogs);
+});
+
+app.get('/catalog/tags', async (req, res) => {
+    const catalogs = await bal.GetAllTags([]);
+    res.status(200).send(catalogs);
+});
+
 app.get('/catalog/:id', async (req, res) => {
     let id = req.params.id;
     const catalogs = await bal.GetCatalog(id);
@@ -28,16 +39,6 @@ app.get('/catalog/:id', async (req, res) => {
     res.status(200).send(catalogs[0]);
 });
 
-app.get('/catalog/tags/:tags', async (req, res) => {
-    let tags = req.params.tags.split(',');
-    const catalogs = await bal.GetCatalogbyTags(tags);
-    res.status(200).send(catalogs);
-});
-
-app.get('/catalog/tags', async (req, res) => {
-    const catalogs = await bal.GetAllTags([]);
-    res.status(200).send(catalogs);
-});
 
 app.post('/catalog', async (req, res) => {
     await bal.PostCatalog(req.body);
