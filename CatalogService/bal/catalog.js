@@ -13,26 +13,28 @@ async function GetCatalogbyTags(tags) {
     return await dal.Interface("get", "catalog", {tags: { $all: tags }});
 }
 async function GetAllTags(tags) {
-    let products = await dal.Interface("get", "catalog", {});
-    if (products === 500) {
+    let tags = await dal.Interface("get", "tag", {});
+    if (tags === 500) {
         return 500;
     }
-    if (products.length === 0) {
+    if (tags.length === 0) {
         return {"tags":[]};
     }
-    let tagsArray = [];
-    products.forEach(product => {
-        product.tags.forEach(tag => {
-            if (!tagsArray.includes(tag)) {
-                tagsArray.push(tag);
-            }
-        });
-    });
-    return {"tags":tagsArray};
+    return tags;
 }
 
 async function PostCatalog(catalog) {
-    return await dal.Interface("post", "catalog", catalog);
+    let code = await dal.Interface("post", "catalog", catalog);
+    for (let i = 0; i < catalog.tags.length; i++) {
+        let tag = await dal.Interface("get", "tag", {"name": catalog.tags[i]});
+        if (tag === 500) {
+            return 500;
+        }
+        if (tag.length === 0) {
+            await dal.Interface("post", "tag", {"name": catalog.tags[i], "favoritecount": 0});
+        }
+    }
+    return code;
 }
 
 async function PatchCatalog(id, catalog) {
