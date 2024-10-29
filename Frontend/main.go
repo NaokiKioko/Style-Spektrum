@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -18,11 +19,11 @@ type Tag struct {
 	FavoriteCount int
 }
 type User struct {
-	Username     string
+	Email     string
 	FavoriteTags []Tag
 }
 type LoginObject struct {
-	Username string
+	Email string
 	Password string
 }
 type JWTObject struct {
@@ -66,6 +67,11 @@ func init() {
 func main() {
 	fmt.Println("Server is running on port", PORT) // This will print before the server starts
 	http.HandleFunc("/", IndexHandler)
+	http.HandleFunc("/login", GetLogin)
+	http.HandleFunc("/register", GetRegister)
+	http.HandleFunc("/handle-login", HandleLogin)
+	http.HandleFunc("/handle-register", HandleRegister)
+	
 	if err := http.ListenAndServe(fmt.Sprint(":", PORT), nil); err != nil {
 		fmt.Println("Error starting server:", err)
 	}
@@ -73,7 +79,7 @@ func main() {
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	var user User = GetUserFromCookie(r)
-	if user.Username == "" {
+	if user.Email == "" {
 		var jwt = r.Header.Get("authorization")
 		if jwt != "" {
 			resp := MakehttpGetRequest(USER_SERVICE_URL+"/me", jwt)
@@ -81,7 +87,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 				if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
 					log.Fatalf("Failed to decode response")
 				}
-				r.Header.Set("username", user.Username)
+				r.Header.Set("email", user.Email)
 				favtagNames := []string{}
 				for _, tag := range user.FavoriteTags {
 					favtagNames = append(favtagNames, tag.Name)
@@ -91,9 +97,10 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	var alltags []Tag = GetAllTags()
-	if user.Username != "" {
+	if user.Email != "" {
 		alltags = RemoveFavoriteTagsFromAllTags(alltags, user.FavoriteTags)
 	}
+	alltags = sortTagsByFavoriteCount(alltags)
 
 	var indexInput IndexInput = IndexInput{user, alltags}
 
@@ -109,8 +116,12 @@ func GetRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
-	var loginObject LoginObject = LoginObject{r.FormValue("username"), r.FormValue("password")}
-	resp, err := http.Post(USER_SERVICE_URL+"/login", "application/json", strings.NewReader(`{"username":"`+loginObject.Username+`","password":"`+loginObject.Password+`"}`))
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed, POST only", http.StatusMethodNotAllowed)
+		return
+	}
+	var loginObject LoginObject = LoginObject{r.FormValue("email"), r.FormValue("password")}
+	resp, err := http.Post(USER_SERVICE_URL+"/login", "application/json", strings.NewReader(`{"email":"`+loginObject.Email+`","password":"`+loginObject.Password+`"}`))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -143,9 +154,13 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
-	username := r.FormValue("username")
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed, POST only", http.StatusMethodNotAllowed)
+		return
+	}
+	email := r.FormValue("email")
 	password := r.FormValue("password")
-	http.Post(USER_SERVICE_URL+"/register", "application/json", strings.NewReader(`{"username":"`+username+`","password":"`+password+`"}`))
+	http.Post(USER_SERVICE_URL+"/register", "application/json", strings.NewReader(`{"email":"`+email+`","password":"`+password+`"}`))
 	renderTemplate(w, "login.html", nil)
 }
 
@@ -164,9 +179,9 @@ func GetCatalog() []Product {
 
 func GetUserFromCookie(r *http.Request) User {
 	var user User
-	if (http.Cookie{Name: "username"}.Value != "") {
+	if (http.Cookie{Name: "email"}.Value != "") {
 		user = User{
-			Username:     http.Cookie{Name: "username"}.Value,
+			Email:     http.Cookie{Name: "email"}.Value,
 			FavoriteTags: []Tag{},
 		}
 		tagnames := strings.Split(http.Cookie{Name: "favorite_tags"}.Value, ",")
@@ -244,6 +259,12 @@ func MakehttpGetRequest(url string, jwt string) *http.Response {
 	return resp
 }
 
+func sortTagsByFavoriteCount(tags []Tag) []Tag {
+	sort.Slice(tags, func(i, j int) bool {
+		return tags[i].FavoriteCount > tags[j].FavoriteCount
+	})
+	return tags
+}
 func renderTemplate(w http.ResponseWriter, templateName string, data interface{}) {
 	t, err := template.ParseFiles("templates/" + templateName)
 	if err != nil {

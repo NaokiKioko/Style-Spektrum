@@ -36,7 +36,7 @@
                 {{range .AllTags}}
                     <li class="flex items-center outline bg-[#e0e0e0] text-[#1a1a1a]">
                         <a href="#" class="block px-4 py-2 rounded-md">{{.Name}}</a>
-                        <span class="ml-2 cursor-pointer text-[#1a1a1a] hover:text-yellow transition-all" hx-post="/favorite/{{.Tag}}" hx-swap="outerHTML" style="font-size: 150%">
+                        <span class="ml-2 cursor-pointer text-[#1a1a1a] hover:text-yellow transition-all" hx-post="/favorite/{{.Name}}" hx-swap="outerHTML" style="font-size: 150%">
                             <span class="inline-block group-hover:hidden">☆</span>
                         </span>
                     </li>
@@ -49,20 +49,20 @@
             <!-- Logo as Image -->
             <div class="justify-center">
                 <div class="flex justify-end bg-[#1a1a1a] space-x-4 back tp-1">
-                    {{ if .JWT.Username}}
+                    {{ if .User.Username}}
                         <a href="#" class="text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">Login</a>
                         <p class="text-[#e0e0e0]">/</p>
-                        <a href="#" class=" text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">{{.JWT.Username}}</a>
+                        <a href="#" class=" text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">{{.User.Username}}</a>
                     {{ else }}
-                        <a href="#" class="text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">LOGIN</a>
+                        <a href="#" hx-get="/login" hx-target="#MainView" class="text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">LOGIN</a>
                         <p class="text-[#e0e0e0]">/</p>
-                        <a href="#" class=" text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">SIGN UP</a>
+                        <a href="#" hx-get="/register" hx-target="#MainView" class=" text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">REGISTER</a>
                     {{ end }}
                 </div>
                 <img src="https://stylespektrumimages.s3.us-east-2.amazonaws.com/Long+Style+Spectrum+Logo+v1.png" alt="Style Spectrum Logo" class="w-full h-full">
             </div>
 
-            <div id="MainView" class="grid grid-cols-5 gap-6">
+            <div id="MainView"  class="grid grid-cols-5 gap-6">
             </div>
         </main>
     </div>
