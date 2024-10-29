@@ -21,7 +21,10 @@ app.get('/catalog/tags/:tags', async (req, res) => {
 });
 
 app.get('/catalog/tags', async (req, res) => {
-    const catalogs = await bal.GetAllTags([]);
+    const catalogs = await bal.GetTags([]);
+    for (let i = 0; i < catalogs.length; i++) {
+        delete catalogs[i]._id;
+    }
     res.status(200).send(catalogs);
 });
 
