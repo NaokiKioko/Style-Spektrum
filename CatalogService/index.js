@@ -9,7 +9,7 @@ app.get('/', (req, res) => {
     res.send('Style Spektrum!');
 });
 
-app.get('/catalogs', async (req, res) => {
+app.get('/catalog', async (req, res) => {
     const catalogs = await bal.GetCatalogs();
     res.status(200).send(catalogs);
 });
