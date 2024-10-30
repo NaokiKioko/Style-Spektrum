@@ -1,7 +1,10 @@
 const express = require('express');
 const app = express();
 const bal = require('./bal/catalog.js');
+const DatabaseInterface = require('./dal/mongoDB.js'); // Import the class
 const port = 3001;
+
+dal = new DatabaseInterface();
 
 app.use(express.json());
 
@@ -10,19 +13,19 @@ app.get('/', (req, res) => {
 });
 
 app.get('/catalog', async (req, res) => {
-    const catalogs = await bal.GetCatalogs();
+    const catalogs = await bal.GetCatalogs(dal);
     res.status(200).send(catalogs);
 });
 
 app.get('/catalog/tags/:tags', async (req, res) => {
     let tags = req.params.tags.split(',');
-    const catalogs = await bal.GetCatalogbyTags(tags);
+    const catalogs = await bal.GetCatalogbyTags(dal, tags);
     res.status(200).send(catalogs);
 });
 
 app.get('/catalog/:id', async (req, res) => {
     let id = req.params.id;
-    const catalogs = await bal.GetCatalog(id);
+    const catalogs = await bal.GetCatalog(dal, id);
     if (catalogs.length === 0) {
         res.status(404).send('Catalog not found');
         return;
@@ -36,13 +39,13 @@ app.get('/catalog/:id', async (req, res) => {
 
 
 app.post('/catalog', async (req, res) => {
-        await bal.PostCatalog(req.body);
+        await bal.PostCatalog(dal, req.body);
     res.sendStatus(201);
 });
 
 app.patch('/catalog/:id', async (req, res) => {
     let id = req.params.id;
-    let result = await bal.PatchCatalog(id, req.body);
+    let result = await bal.PatchCatalog(dal, id, req.body);
     if (result === 404) {
         res.status(404).send('Catalog not found');
         return;
@@ -57,7 +60,7 @@ app.patch('/catalog/:id', async (req, res) => {
 app.delete('/catalog/:id', async (req, res) => {
     let id = req.params.id;
     req.body.id = id;
-    const result = await bal.DeleteCatalog(id, req.body);
+    const result = await bal.DeleteCatalog(dal, id, req.body);
     if (result === 404) {
         res.status(404).send('Catalog not found');
         return;
@@ -70,7 +73,7 @@ app.delete('/catalog/:id', async (req, res) => {
 });
 
 app.get('/tags', async (req, res) => {
-        const catalogs = await bal.GetTags([]);
+        const catalogs = await bal.GetTags(dal, []);
     for (let i = 0; i < catalogs.length; i++) {
         delete catalogs[i]._id;
     }
