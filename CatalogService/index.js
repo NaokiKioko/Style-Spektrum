@@ -36,7 +36,7 @@ app.get('/catalog/:id', async (req, res) => {
 
 
 app.post('/catalog', async (req, res) => {
-    await bal.PostCatalog(req.body);
+        await bal.PostCatalog(req.body);
     res.sendStatus(201);
 });
 
