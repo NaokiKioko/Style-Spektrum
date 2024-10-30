@@ -9,22 +9,28 @@ const client = new MongoClient(connectionString,
             deprecationErrors: true,
         }
     });
-
-const Interface = async (request, type, object) => {
-    try {
-        // Ensure the client is connected
-        await client.connect();
-        await client.db("type").command({ ping: 1 });
+    
+    async function connectClient() {
+        if (!client.isConnected()) {
+            await client.connect();
+        }
+        return client;
+    }
+    
+    const Interface = async (request, type, object) => {
+        try {
+            const dbClient = await connectClient();
+        await dbClient.db("type").command({ ping: 1 });
         type = type + "";
         switch (request.toLowerCase()) {
             case "post":
-                return await PostAny(client, type, object);
+                return await PostAny(dbClient, type, object);
             case "get":
-                return await GetAny(client, type, object);
+                return await GetAny(dbClient, type, object);
             case "patch":
-                return await PatchAny(client, type, object);
+                return await PatchAny(dbClient, type, object);
             case "delete":
-                return await DeleteAny(client, type, object);
+                return await DeleteAny(dbClient, type, object);
             default:
                 return 404;
         }
