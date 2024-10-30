@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -41,26 +43,27 @@ type Product struct {
 	URL         string
 }
 type IndexInput struct {
-	User    User
+	User         User
 	FavoriteTags []Tag
-	AllTags []Tag
+	AllTags      []Tag
 }
 type HtmlError struct {
 	Message    string
 	StatusCode int
-	Error bool
+	Error      bool
 }
 type CatalogPageData struct {
 	Products []Product
 	Error    *HtmlError
 }
 type LoginPageData struct {
-    Login *LoginObject
-    Error *HtmlError
+	Login *LoginObject
+	Error *HtmlError
 }
 
 var USER_SERVICE_URL string
 var CATALOG_SERVICE_URL string
+var JWTTIMEOUT int
 
 const PORT = "8081"
 
@@ -76,6 +79,10 @@ func init() {
 	CATALOG_SERVICE_URL = os.Getenv("CATALOG_SERVICE_URL")
 	if CATALOG_SERVICE_URL == "" {
 		log.Fatalf("CATALOG_SERVICE_URL not set in .env file")
+	}
+	JWTTIMEOUT, err = strconv.Atoi(strings.TrimSuffix(os.Getenv("JWT_TIMEOUT"), "h"))
+	if err != nil {
+		log.Fatalf("Invalid JWT_TIMEOUT value in .env file")
 	}
 }
 
@@ -96,14 +103,24 @@ func main() {
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	var user, _, err = GetUserFromCookies(r)
+	var user, jwt, err = GetUserFromCookies(r)
 	if err != nil {
 		user = User{}
+	} else if jwt == "" {
+		ClearUsersCookies(w)
+		w.Header().Set("HX-Redirect", "/")
+		return
 	}
-	if (len(user.FavoriteTags) == 1 && user.FavoriteTags[0].Name == "") {
+	if len(user.FavoriteTags) == 1 && user.FavoriteTags[0].Name == "" {
 		user.FavoriteTags = []Tag{}
 	}
-	var alltags []Tag = GetAllTags()
+	resp, err := MakehttpGetRequest(CATALOG_SERVICE_URL + "/tags", "")
+	if err != nil {
+		log.Fatalf("Error getting tags from catalog service")
+	}
+	alltags := []Tag{}
+	ResponseToObj(resp, &alltags)
+
 	if user.Email != "" {
 		alltags = RemoveFavoriteTagsFromAllTags(alltags, user.FavoriteTags)
 	}
@@ -147,13 +164,11 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	// Set users cookie's
 	SetUsersCookies(w, user, jwtObj.Token)
 	w.Header().Set("HX-Redirect", "/")
-	
 }
 
 func HandleLogout(w http.ResponseWriter, r *http.Request) {
 	ClearUsersCookies(w)
 	w.Header().Set("HX-Redirect", "/")
-
 }
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
@@ -198,23 +213,25 @@ func GetCatalogStyleSearch(w http.ResponseWriter, r *http.Request) {
 	ResponseToObj(resp, &products)
 	renderTemplate(w, "catalog.html", CatalogPageData{products, nil})
 }
+
 // ----------------- Helper functions -----------------
 func SetUsersCookies(w http.ResponseWriter, user User, jwt string) {
 	// Gather the cookies in a slice
 	cookies := []http.Cookie{
 		{
-			Name:  "JWT",
-			Path:   "/",
-			Value: jwt,
+			Name:    "JWT",
+			Path:    "/",
+			Value:   jwt,
+			Expires: time.Now().Add(time.Duration(JWTTIMEOUT) * time.Hour),
 		},
 		{
 			Name:  "Email",
-			Path:   "/",
+			Path:  "/",
 			Value: user.Email,
 		},
 		{
 			Name:  "Username",
-			Path:   "/",
+			Path:  "/",
 			Value: strings.Split(user.Email, "@")[0],
 		},
 	}
@@ -226,7 +243,7 @@ func SetUsersCookies(w http.ResponseWriter, user User, jwt string) {
 	}
 	cookies = append(cookies, http.Cookie{
 		Name:  "FavoriteTags",
-		Path:   "/",
+		Path:  "/",
 		Value: strings.Join(favtagNames, ","),
 	})
 
@@ -235,6 +252,7 @@ func SetUsersCookies(w http.ResponseWriter, user User, jwt string) {
 		http.SetCookie(w, &cookie)
 	}
 }
+
 func GetUserFromCookies(r *http.Request) (User, string, error) {
 	var user User
 	var jwt string
@@ -299,18 +317,7 @@ func ClearUsersCookies(w http.ResponseWriter) {
 		http.SetCookie(w, &cookie)
 	}
 }
-func GetAllTags() []Tag {
-	resp, err := http.Get(CATALOG_SERVICE_URL + "/tags")
-	if err != nil {
-		log.Fatalf("Error getting tags from catalog service")
-	}
-	defer resp.Body.Close()
-	var tags []Tag
-	if err := json.NewDecoder(resp.Body).Decode(&tags); err != nil {
-		log.Fatalf("Failed to decode response")
-	}
-	return tags
-}
+
 func RemoveFavoriteTagsFromAllTags(alltags []Tag, favtags []Tag) []Tag {
 	for x, tag := range alltags {
 		for _, favtag := range favtags {
@@ -320,22 +327,6 @@ func RemoveFavoriteTagsFromAllTags(alltags []Tag, favtags []Tag) []Tag {
 		}
 	}
 	return alltags
-}
-func GetCurrentUser(r *http.Request) User {
-	jwt := r.Header.Get("Authorization")
-	if jwt == "" {
-		return User{}
-	}
-	resp, err := http.Get(USER_SERVICE_URL + "/me")
-	if err != nil {
-		log.Fatalf("Error getting user from user service")
-	}
-	defer resp.Body.Close()
-	var user User
-	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
-		log.Fatalf("Failed to decode response")
-	}
-	return user
 }
 func MakehttpGetRequest(url string, jwt string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
@@ -373,6 +364,9 @@ func MakehttpPostRequest(url string, jwt string, body *strings.Reader) (*http.Re
 	return resp, nil
 }
 func ResponseToObj(resp *http.Response, obj interface{}) {
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("Failed to get response from:" + resp.Request.URL.String())
+	}
 	if err := json.NewDecoder(resp.Body).Decode(obj); err != nil {
 		log.Fatalf("Failed to decode response")
 	}
