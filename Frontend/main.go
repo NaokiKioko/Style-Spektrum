@@ -147,11 +147,13 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	// Set users cookie's
 	SetUsersCookies(w, user, jwtObj.Token)
 	w.Header().Set("HX-Redirect", "/")
+	
 }
 
 func HandleLogout(w http.ResponseWriter, r *http.Request) {
 	ClearUsersCookies(w)
 	w.Header().Set("HX-Redirect", "/")
+
 }
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
@@ -161,6 +163,12 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	}
 	email := r.FormValue("email")
 	password := r.FormValue("password")
+	confirmpassword := r.FormValue("confirmpassword")
+
+	if password != confirmpassword {
+		renderTemplate(w, "register.html", LoginPageData{&LoginObject{email, ""}, &HtmlError{"Passwords do not match", http.StatusBadRequest, true}})
+		return
+	}
 	// _, err := http.Post(USER_SERVICE_URL+"/register", "application/json", strings.NewReader(`{"email":"`+email+`","password":"`+password+`"}`))
 	_, err := MakehttpPostRequest(USER_SERVICE_URL+"/register", "", strings.NewReader(`{"email":"`+email+`","password":"`+password+`"}`))
 	if err != nil {
@@ -196,14 +204,17 @@ func SetUsersCookies(w http.ResponseWriter, user User, jwt string) {
 	cookies := []http.Cookie{
 		{
 			Name:  "JWT",
+			Path:   "/",
 			Value: jwt,
 		},
 		{
 			Name:  "Email",
+			Path:   "/",
 			Value: user.Email,
 		},
 		{
 			Name:  "Username",
+			Path:   "/",
 			Value: strings.Split(user.Email, "@")[0],
 		},
 	}
@@ -215,6 +226,7 @@ func SetUsersCookies(w http.ResponseWriter, user User, jwt string) {
 	}
 	cookies = append(cookies, http.Cookie{
 		Name:  "FavoriteTags",
+		Path:   "/",
 		Value: strings.Join(favtagNames, ","),
 	})
 
@@ -264,18 +276,22 @@ func ClearUsersCookies(w http.ResponseWriter) {
 	cookies := []http.Cookie{
 		{
 			Name:   "JWT",
+			Path:   "/",
 			MaxAge: -1,
 		},
 		{
 			Name:   "Email",
+			Path:   "/",
 			MaxAge: -1,
 		},
 		{
 			Name:   "Username",
+			Path:   "/",
 			MaxAge: -1,
 		},
 		{
 			Name:   "FavoriteTags",
+			Path:   "/",
 			MaxAge: -1,
 		},
 	}

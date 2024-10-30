@@ -4,16 +4,22 @@
     <h1 class="text-4xl font-semibold text-center text-[#e0e0e0] mb-6">Register</h1>
     <form id="registerForm" hx-post="/handle-register" hx-target="#MainView" class="flex flex-col space-y-4">
         <label for="email" class="text-lg text-[#e0e0e0]">Email</label>
+        {{if .Login}}
+        <input type="email" id="email" name="email" value="{{.Login.Email}}" class="border border-gray-500 rounded-md p-2 bg-[#e0e0e0] text-[#1a1a1a] placeholder-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#e0e0e0]">
+        {{else}}
         <input type="email" id="email" name="email" class="border border-gray-500 rounded-md p-2 bg-[#e0e0e0] text-[#1a1a1a] placeholder-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#e0e0e0]">
-        
+        {{end}}
         <label for="password" class="text-lg text-[#e0e0e0]">Password</label>
         <input type="password" id="password" name="password" class="border border-gray-500 rounded-md p-2 bg-[#e0e0e0] text-[#1a1a1a] placeholder-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#e0e0e0]">
+        <label for="password" class="text-lg text-[#e0e0e0]">Confirm Password</label>
+        <input type="password" id="password" name="confirmpassword" class="border border-gray-500 rounded-md p-2 bg-[#e0e0e0] text-[#1a1a1a] placeholder-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#e0e0e0]">
+        
         <br>
         <button type="submit" class="bg-[#1a1a1a] text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a] transition-all rounded-md p-2 font-semibold">Register</button>
     </form>
     {{if .Error}}
-        <h2 class="text-2xl text-center text-[#e0e0e0] mt-4">{{.StatusCode}}</h2>
-        <p class="text-red-500 text-center">{{.Message}}</p>
+        <h2 class="text-2xl text-center text-[#e0e0e0] mt-4">{{.Error.StatusCode}}</h2>
+        <p class="text-red-500 text-center">{{.Error.Message}}</p>
     {{end}}
 </div>
 <div class="">
