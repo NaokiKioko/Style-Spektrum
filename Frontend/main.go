@@ -171,7 +171,7 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetCatalog(w http.ResponseWriter, r *http.Request) {
-	resp, err := MakehttpGetRequest(CATALOG_SERVICE_URL+"/catalogs", "")
+	resp, err := MakehttpGetRequest(CATALOG_SERVICE_URL+"/catalog", "")
 	if err != nil {
 		log.Fatalf("Error getting catalog from catalog service")
 	}
@@ -181,7 +181,7 @@ func GetCatalog(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "catalog.html", CatalogPageData{products, nil})
 }
 func GetCatalogStyleSearch(w http.ResponseWriter, r *http.Request) {
-	resp, err := MakehttpGetRequest(CATALOG_SERVICE_URL+"/catalogs/tags/"+r.URL.Path[len("/catalog/"):], "")
+	resp, err := MakehttpGetRequest(CATALOG_SERVICE_URL+"/catalog/tags/"+r.URL.Path[len("/catalog/"):], "")
 	if err != nil {
 		log.Fatalf("Error getting catalog from catalog service")
 	}

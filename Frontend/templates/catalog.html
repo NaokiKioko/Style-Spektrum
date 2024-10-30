@@ -1,63 +1,36 @@
-{{range .Products}}
-    <div class="col-span-1 bg-white shadow-lg rounded-lg p-4 grid grid-cols-2 gap-4">
-        <!-- Product Image Carousel -->
-        <div class="col-span-1 relative">
-            <div id="image-carousel-{{.ID}}" class="w-full h-full rounded-md overflow-hidden">
-                <!-- Carousel Images -->
-                {{range .Images}}
-                    <img src="{{.}}" alt="{{$.Name}}" class="carousel-image w-full h-full object-cover absolute top-0 left-0 transition-opacity duration-700 ease-in-out opacity-0">
-                {{end}}
-                <!-- First image should be visible initially -->
-                <script>document.querySelector("#image-carousel-{{.ID}} .carousel-image").classList.add('opacity-100');</script>
-            </div>
-            <!-- Carousel Controls -->
-            <button onclick="prevImage('{{.ID}}')" class="absolute left-0 top-1/2 -translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded-l-md">&#10094;</button>
-            <button onclick="nextImage('{{.ID}}')" class="absolute right-0 top-1/2 -translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded-r-md">&#10095;</button>
+
+    {{ if .Error }}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <span class="block sm:inline">{{ .Error.Message }}</span>
+            <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
+                <svg class="fill-current h-6 w-6 text-red-500" role="button" viewBox="0 0 20 20">
+                    <path d="M14.59 8L10 12.59 5.41 8 4 9.41l6 6 6-6z"></path>
+                </svg>
+            </span>
         </div>
-
-        <!-- Product Details -->
-        <div class="col-span-1 flex flex-col justify-between">
-            <h2 class="text-xl font-bold text-[#1a1a1a]">{{.Name}}</h2>
-            <p class="text-sm text-gray-600">{{.Description}}</p>
-            <button class="bg-[#1a1a1a] text-[#e0e0e0] rounded-md px-4 py-2 mt-4 hover:bg-[#e0e0e0] hover:text-[#1a1a1a]"
-                    hx-post="/favorite/{{.Name}}" hx-swap="outerHTML">Favorite</button>
-        </div>
-    </div>
-{{end}}
-
-
-<script>
-    let currentImageIndex = {};
-
-    function showImage(productId, index) {
-        const carousel = document.getElementById(`image-carousel-${productId}`);
-        const images = carousel.querySelectorAll('.carousel-image');
-    
-        // Hide all images
-        images.forEach((img) => img.classList.remove('opacity-100'));
-    
-        // Show the desired image
-        images[index].classList.add('opacity-100');
-    }
-    
-    function nextImage(productId) {
-        const images = document.querySelectorAll(`#image-carousel-${productId} .carousel-image`);
-        currentImageIndex[productId] = (currentImageIndex[productId] + 1) % images.length;
-        showImage(productId, currentImageIndex[productId]);
-    }
-    
-    function prevImage(productId) {
-        const images = document.querySelectorAll(`#image-carousel-${productId} .carousel-image`);
-        currentImageIndex[productId] = (currentImageIndex[productId] - 1 + images.length) % images.length;
-        showImage(productId, currentImageIndex[productId]);
-    }
-    
-    // Initialize each product with its first image
-    document.addEventListener("DOMContentLoaded", () => {
-        document.querySelectorAll('[id^="image-carousel-"]').forEach((carousel) => {
-            const productId = carousel.id.replace('image-carousel-', '');
-            currentImageIndex[productId] = 0;
-            showImage(productId, 0);
-        });
-    });
-</script>
+    {{ else }}
+            {{ range .Products }}
+                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+                    <div class="aspect-w-1 aspect-h-1 bg-gray-200 rounded-lg overflow-hidden">
+                        <img src="{{ index .Images 0 }}" alt="{{ .Name }}" class="object-cover w-full h-40" />
+                    </div>
+                    <div class="mt-4">
+                        <h2 class="text-lg font-semibold truncate" style="max-width: 30ch;">{{ .Name }}</h2>
+                        <p class="text-gray-500">{{ printf "$%.2f" .Price }}</p>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-yellow-400 font-semibold">
+                            {{ printf "%.1f" .Rating }} ★
+                        </span>
+                    </div>
+                    <div class="flex space-x-2 mt-2 grid grid-cols-3 gap-1">
+                        {{ range .Tags }}
+                            <span class="text-xs bg-gray-200 text-gray-700 rounded-full px-2 py-1 truncate inline-block" style="max-width: 10ch;">{{ . }}</span>
+                        {{ end }}
+                    </div>
+                    <div class="mt-2">
+                        <a href="{{ .URL }}" class="text-indigo-600 hover:underline text-sm font-medium">View Product</a>
+                    </div>
+                </div>
+            {{ end }}
+{{ end }}

@@ -11,9 +11,9 @@
 </head>
 <body id="PageBody" class="bg-white text-black">
     <!-- Main Layout with Sidebar and Content -->
-    <div class="flex">
+    <div class="flex h-full">
     <!-- Sidebar for Styles -->
-        <aside class="bg-[#1a1a1a] h-screen pr-4 overflow-auto w-1/10">
+        <aside class="bg-[#1a1a1a] h-screen pr-4 overflow-auto w-1/10 max-h-full">
             <h2 class="text-xl text-[#e0e0e0] text-center font-semibold my-2">Your Styles</h2>
             {{if .User.FavoriteTags}}
                 <ul class="bg-[#e0e0e0] text-[#1a1a1a] ">
