@@ -19,7 +19,7 @@ async function PostCatalog(catalog) {
     if (code === 500) {
         return 500;
     } else {
-        await PostTags(catalog.tags);
+        await PostTags(catalog.Tags);
     }
     return code;
 }
