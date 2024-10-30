@@ -1,20 +1,17 @@
-const { ObjectId } = require('mongodb');
-const dal = require('../dal/mongoDB.js');
-
-async function GetCatalogs() {
+async function GetCatalogs(dal) {
     return await dal.Interface("get", "Catalog", {});
 }
 
-async function GetCatalog(id) {
+async function GetCatalog(dal, id) {
     return await dal.Interface("get", "Catalog", {_id: new ObjectId(id)});
 }
 
-async function GetCatalogbyTags(tags) {
+async function GetCatalogbyTags(dal, tags) {
     return await dal.Interface("get", "Catalog", {"Tags": { $in: tags }});
 }
 
 
-async function PostCatalog(catalog) {
+async function PostCatalog(dal, catalog) {
     let code = await dal.Interface("post", "Catalog", catalog);
     if (code === 500) {
         return 500;
@@ -24,7 +21,7 @@ async function PostCatalog(catalog) {
     return code;
 }
 
-async function PatchCatalog(id, catalog) {
+async function PatchCatalog(dal, id, catalog) {
     if (catalog._id) {
         delete catalog._id;
     }
@@ -37,15 +34,15 @@ async function PatchCatalog(id, catalog) {
     return code;
 }
 
-async function DeleteCatalog(id) {
+async function DeleteCatalog(dal, id) {
     return await dal.Interface("delete", "Catalog", {_id: new ObjectId(id)});
 }
 
-async function GetTags() {
+async function GetTags(dal) {
     return await dal.Interface("get", "Tags", {});
 }
 
-async function PostTags(tagNames) {
+async function PostTags(dal, tagNames) {
     for (let i = 0; i < tagNames.length; i++) {
         let tag = await dal.Interface("get", "Tags", {"Name": tagNames[i]});
         if (tag === 500) {
