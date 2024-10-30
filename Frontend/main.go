@@ -87,7 +87,7 @@ func init() {
 }
 
 func main() {
-	fmt.Println("Server is running on port", PORT) // This will print before the server starts
+	fmt.Println("\n\n\n\nServer is running on port", PORT) // This will print before the server starts
 	http.HandleFunc("/", IndexHandler)
 	http.HandleFunc("/login", GetLogin)
 	http.HandleFunc("/register", GetRegister)
