@@ -18,10 +18,10 @@
             {{if .User.FavoriteTags}}
                 <ul class="bg-[#e0e0e0] text-[#1a1a1a] ">
                     {{range .FavoriteTags}}
-                        <li class="flex items-center outline bg-[#e0e0e0] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
+                        <li hx-get="/catalog/{{.Name}}" hx-target="#MainView" class="flex justify-end items-center outline bg-[#e0e0e0] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
                             <a href="#" class="block px-4 py-2 rounded-md">{{.Name}}</a>
-                            <span class="ml-2 cursor-pointer text-[#1a1a1a] hover:text-yellow transition-all" hx-post="/favorite/{{.Name}}" hx-swap="outerHTML" style="font-size: 150%">
-                                <span class="inline-block group-hover:hidden">★</span>
+                            <span class="ml-2 pr-2 cursor-pointer text-[#1a1a1a] hover:text-yellow-500" style="font-size: 150%">
+                                <span class="inline-block">★</span>
                             </span>
                         </li>
                     {{end}}
@@ -34,10 +34,10 @@
             <h2 class="text-xl text-white font-semibold text-center my-2">Popular Styles</h2>
             <ul class="bg-white text-black ">
                 {{range .AllTags}}
-                    <li class="flex items-center outline bg-[#e0e0e0] text-[#1a1a1a]">
+                    <li hx-get="/catalog/{{.Name}}" hx-target="#MainView" class="flex justify-end outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
                         <a href="#" class="block px-4 py-2 rounded-md">{{.Name}}</a>
-                        <span class="ml-2 cursor-pointer text-[#1a1a1a] hover:text-yellow transition-all" hx-post="/favorite/{{.Name}}" hx-swap="outerHTML" style="font-size: 150%">
-                            <span class="inline-block group-hover:hidden">☆</span>
+                        <span class="ml-2 pr-2 cursor-pointer text-[#1a1a1a] hover:text-yellow-500" style="font-size: 150%">
+                            <span class="inline-block">☆</span>
                         </span>
                     </li>
                 {{end}}
@@ -62,7 +62,7 @@
                 <img src="https://stylespektrumimages.s3.us-east-2.amazonaws.com/Long+Style+Spectrum+Logo+v1.png" alt="Style Spectrum Logo" class="w-full h-full">
             </div>
 
-            <div id="MainView"  class="grid grid-cols-5 gap-6">
+            <div id="MainView" hx-get="/catalog" hx-target="#MainView" hx-trigger="load" class="grid grid-cols-5 gap-6">
             </div>
         </main>
     </div>

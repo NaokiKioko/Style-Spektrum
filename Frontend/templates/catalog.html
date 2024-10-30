@@ -1,10 +1,63 @@
 {{range .Products}}
-<div class="col-span-1">
-    <img src="{{.Image}}" alt="{{.Name}}" class="w-full h-full">
-</div>
-<div class="col-span-1">
-    <h2 class="text-2xl">{{.Name}}</h2>
-    <p>{{.Description}}</p>
-    <button class="bg-blue-500 text-white rounded-md p-2" hx-post="/favorite/{{.Name}}" hx-swap="outerHTML">Favorite</button>
-</div>
+    <div class="col-span-1 bg-white shadow-lg rounded-lg p-4 grid grid-cols-2 gap-4">
+        <!-- Product Image Carousel -->
+        <div class="col-span-1 relative">
+            <div id="image-carousel-{{.ID}}" class="w-full h-full rounded-md overflow-hidden">
+                <!-- Carousel Images -->
+                {{range .Images}}
+                    <img src="{{.}}" alt="{{$.Name}}" class="carousel-image w-full h-full object-cover absolute top-0 left-0 transition-opacity duration-700 ease-in-out opacity-0">
+                {{end}}
+                <!-- First image should be visible initially -->
+                <script>document.querySelector("#image-carousel-{{.ID}} .carousel-image").classList.add('opacity-100');</script>
+            </div>
+            <!-- Carousel Controls -->
+            <button onclick="prevImage('{{.ID}}')" class="absolute left-0 top-1/2 -translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded-l-md">&#10094;</button>
+            <button onclick="nextImage('{{.ID}}')" class="absolute right-0 top-1/2 -translate-y-1/2 bg-gray-700 text-white px-2 py-1 rounded-r-md">&#10095;</button>
+        </div>
+
+        <!-- Product Details -->
+        <div class="col-span-1 flex flex-col justify-between">
+            <h2 class="text-xl font-bold text-[#1a1a1a]">{{.Name}}</h2>
+            <p class="text-sm text-gray-600">{{.Description}}</p>
+            <button class="bg-[#1a1a1a] text-[#e0e0e0] rounded-md px-4 py-2 mt-4 hover:bg-[#e0e0e0] hover:text-[#1a1a1a]"
+                    hx-post="/favorite/{{.Name}}" hx-swap="outerHTML">Favorite</button>
+        </div>
+    </div>
 {{end}}
+
+
+<script>
+    let currentImageIndex = {};
+
+    function showImage(productId, index) {
+        const carousel = document.getElementById(`image-carousel-${productId}`);
+        const images = carousel.querySelectorAll('.carousel-image');
+    
+        // Hide all images
+        images.forEach((img) => img.classList.remove('opacity-100'));
+    
+        // Show the desired image
+        images[index].classList.add('opacity-100');
+    }
+    
+    function nextImage(productId) {
+        const images = document.querySelectorAll(`#image-carousel-${productId} .carousel-image`);
+        currentImageIndex[productId] = (currentImageIndex[productId] + 1) % images.length;
+        showImage(productId, currentImageIndex[productId]);
+    }
+    
+    function prevImage(productId) {
+        const images = document.querySelectorAll(`#image-carousel-${productId} .carousel-image`);
+        currentImageIndex[productId] = (currentImageIndex[productId] - 1 + images.length) % images.length;
+        showImage(productId, currentImageIndex[productId]);
+    }
+    
+    // Initialize each product with its first image
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll('[id^="image-carousel-"]').forEach((carousel) => {
+            const productId = carousel.id.replace('image-carousel-', '');
+            currentImageIndex[productId] = 0;
+            showImage(productId, 0);
+        });
+    });
+</script>

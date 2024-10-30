@@ -50,7 +50,10 @@ type HtmlError struct {
 	StatusCode int
 	Error bool
 }
-
+type CatalogPageData struct {
+	Products []Product
+	Error    *HtmlError
+}
 type LoginPageData struct {
     Login *LoginObject
     Error *HtmlError
@@ -84,6 +87,8 @@ func main() {
 	http.HandleFunc("/logout", HandleLogout)
 	http.HandleFunc("/handle-login", HandleLogin)
 	http.HandleFunc("/handle-register", HandleRegister)
+	http.HandleFunc("/catalog", GetCatalog)
+	http.HandleFunc("/catalog/", GetCatalogStyleSearch)
 
 	if err := http.ListenAndServe(fmt.Sprint(":", PORT), nil); err != nil {
 		fmt.Println("Error starting server:", err)
@@ -165,19 +170,27 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "login.html", LoginPageData{&LoginObject{email, password}, nil})
 }
 
-func GetCatalog() []Product {
-	resp, err := http.Get(CATALOG_SERVICE_URL + "/catalog")
+func GetCatalog(w http.ResponseWriter, r *http.Request) {
+	resp, err := MakehttpGetRequest(CATALOG_SERVICE_URL+"/catalogs", "")
 	if err != nil {
 		log.Fatalf("Error getting catalog from catalog service")
 	}
 	defer resp.Body.Close()
 	var products []Product
-	if err := json.NewDecoder(resp.Body).Decode(&products); err != nil {
-		log.Fatalf("Failed to decode response")
-	}
-	return products
+	ResponseToObj(resp, &products)
+	renderTemplate(w, "catalog.html", CatalogPageData{products, nil})
 }
-
+func GetCatalogStyleSearch(w http.ResponseWriter, r *http.Request) {
+	resp, err := MakehttpGetRequest(CATALOG_SERVICE_URL+"/catalogs/tags/"+r.URL.Path[len("/catalog/"):], "")
+	if err != nil {
+		log.Fatalf("Error getting catalog from catalog service")
+	}
+	defer resp.Body.Close()
+	var products []Product
+	ResponseToObj(resp, &products)
+	renderTemplate(w, "catalog.html", CatalogPageData{products, nil})
+}
+// ----------------- Helper functions -----------------
 func SetUsersCookies(w http.ResponseWriter, user User, jwt string) {
 	// Gather the cookies in a slice
 	cookies := []http.Cookie{
@@ -270,7 +283,6 @@ func ClearUsersCookies(w http.ResponseWriter) {
 		http.SetCookie(w, &cookie)
 	}
 }
-
 func GetAllTags() []Tag {
 	resp, err := http.Get(CATALOG_SERVICE_URL + "/tags")
 	if err != nil {
@@ -283,7 +295,6 @@ func GetAllTags() []Tag {
 	}
 	return tags
 }
-
 func RemoveFavoriteTagsFromAllTags(alltags []Tag, favtags []Tag) []Tag {
 	for x, tag := range alltags {
 		for _, favtag := range favtags {
@@ -294,7 +305,6 @@ func RemoveFavoriteTagsFromAllTags(alltags []Tag, favtags []Tag) []Tag {
 	}
 	return alltags
 }
-
 func GetCurrentUser(r *http.Request) User {
 	jwt := r.Header.Get("Authorization")
 	if jwt == "" {
@@ -311,7 +321,6 @@ func GetCurrentUser(r *http.Request) User {
 	}
 	return user
 }
-
 func MakehttpGetRequest(url string, jwt string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -326,7 +335,6 @@ func MakehttpGetRequest(url string, jwt string) (*http.Response, error) {
 	}
 	return resp, err
 }
-
 func MakehttpPostRequest(url string, jwt string, body *strings.Reader) (*http.Response, error) {
 	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
@@ -348,21 +356,17 @@ func MakehttpPostRequest(url string, jwt string, body *strings.Reader) (*http.Re
 	}
 	return resp, nil
 }
-
 func ResponseToObj(resp *http.Response, obj interface{}) {
 	if err := json.NewDecoder(resp.Body).Decode(obj); err != nil {
 		log.Fatalf("Failed to decode response")
 	}
 }
-
 func sortTagsByFavoriteCount(tags []Tag) []Tag {
 	sort.Slice(tags, func(i, j int) bool {
 		return tags[i].FavoriteCount > tags[j].FavoriteCount
 	})
 	return tags
 }
-
-
 func renderTemplate(w http.ResponseWriter, templateName string, data interface{}) {
 	t, err := template.ParseFiles("templates/" + templateName)
 	if err != nil {
