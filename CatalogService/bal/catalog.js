@@ -10,7 +10,7 @@ async function GetCatalog(id) {
 }
 
 async function GetCatalogbyTags(tags) {
-    return await dal.Interface("get", "Catalog", {tags: { $all: tags }});
+    return await dal.Interface("get", "Catalog", {"Tags": { $in: tags }});
 }
 
 
@@ -47,12 +47,12 @@ async function GetTags() {
 
 async function PostTags(tagNames) {
     for (let i = 0; i < tagNames.length; i++) {
-        let tag = await dal.Interface("get", "Tags", {"name": tagNames[i]});
+        let tag = await dal.Interface("get", "Tags", {"Name": tagNames[i]});
         if (tag === 500) {
             return 500;
         }
         if (tag.length === 0) {
-            await dal.Interface("post", "Tags", {"name": tagNames[i], "favoritecount": 0});
+            await dal.Interface("post", "Tags", {"Name": tagNames[i], "Favoritecount": 0});
         }
     }
 }
