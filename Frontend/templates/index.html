@@ -13,7 +13,13 @@
     <!-- Main Layout with Sidebar and Content -->
     <div class="flex h-full">
     <!-- Sidebar for Styles -->
-        <aside class="bg-[#1a1a1a] h-screen pr-4 overflow-auto w-1/10 max-h-full">
+        <aside class="bg-[#1a1a1a] h-screen pr-4 overflow-auto w-1/10 max-h-full" style="overflow-y: auto; scrollbar-width: thin; scrollbar-color: transparent transparent;">
+            <h2 class="text-xl text-white font-semibold text-center my-2">ALL Styles</h2>
+            <ul class="bg-white text-black ">
+                    <li hx-get="/catalog" hx-target="#MainView" class="flex justify-center outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
+                        <a href="#" class="block px-4 py-2 rounded-md">ALL</a>
+                    </li>
+            </ul>
             <h2 class="text-xl text-[#e0e0e0] text-center font-semibold my-2">Your Styles</h2>
             {{if .User.FavoriteTags}}
                 <ul class="bg-[#e0e0e0] text-[#1a1a1a] ">
@@ -26,11 +32,11 @@
                         </li>
                     {{end}}
             {{else}}
-                <li class="flex items-center outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
+                <li class="flex items-center justify-center outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
                     <p href="#" class="block px-4 py-2 rounded-md">No Favs Styles</p>
                 </li>
             {{end}}
-            </ul>
+                </ul>
             <h2 class="text-xl text-white font-semibold text-center my-2">Popular Styles</h2>
             <ul class="bg-white text-black ">
                 {{range .AllTags}}
@@ -43,6 +49,7 @@
                 {{end}}
             </ul>
         </aside>
+
 
         <!-- Main Content Area -->
         <main class="flex-1">
@@ -62,10 +69,23 @@
                 <img src="https://stylespektrumimages.s3.us-east-2.amazonaws.com/Long+Style+Spectrum+Logo+v1.png" alt="Style Spectrum Logo" class="w-full h-full">
             </div>
 
-            <div id="MainView" hx-get="/catalog" hx-target="#MainView" hx-trigger="load" class="grid grid-cols-5 gap-6">
+            <div id="MainView" hx-get="/catalog" hx-target="#MainView" hx-trigger="load" class="grid grid-cols-5 gap-6 overflow-auto" style="overflow-y: auto; scrollbar-width: thin; scrollbar-color: transparent transparent;">>
             </div>
         </main>
     </div>
+
+    <style>
+        .aspect-w-1::-webkit-scrollbar {
+            width: 4px; 
+        }
+        .aspect-w-1::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2); 
+            border-radius: 4px;
+        }
+        .aspect-w-1::-webkit-scrollbar-track {
+            background: transparent; 
+        }
+    </style>
 
 </body>
 </html>
