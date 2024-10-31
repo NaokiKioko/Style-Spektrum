@@ -3,8 +3,9 @@ const app = express();
 const auth = require('./auth/auth.js');
 const bal = require('./bal/users.js');
 const DatabaseInterface = require('./dal/mongoDB.js'); // Import the class
-const dal = new DatabaseInterface();
 const port = 3000;
+
+dal = new DatabaseInterface();
 
 app.use(express.json());
 

@@ -5,7 +5,7 @@ const auth = require('../auth/auth.js');
 
 async function registerUser(dal, email, password) {
     let endcode = null;
-    let emailExists = await CheckEmailExists(email);
+    let emailExists = await CheckEmailExists(dal, email);
     if (emailExists == false && ValidateEmail(email)) {
         // register user
         password = security.hashPassword(password);
@@ -72,7 +72,7 @@ async function CheckEmailExists(dal, email) {
     return emailExists;
 }
 
-function ValidateEmail(dal, email) {
+function ValidateEmail(email) {
     var regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
     const isValid = email && typeof email === 'string' && email.match(regex);
 
