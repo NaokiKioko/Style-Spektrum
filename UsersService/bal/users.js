@@ -1,16 +1,16 @@
 const security = require('../security/password.js');
-const dal = require('../dal/mongoDB.js');
+const DatabaseInterface = require('../dal/mongoDB.js'); ;
 const auth = require('../auth/auth.js');
 
 
-async function registerUser(email, password) {
+async function registerUser(dal, email, password) {
     let endcode = null;
-    let emailExists = await CheckEmailExists(email);
+    let emailExists = await CheckEmailExists(dal, email);
     if (emailExists == false && ValidateEmail(email)) {
         // register user
         password = security.hashPassword(password);
         try {
-            await dal.Interface("post", "Users", { email, password, role: "user", favoriteTags: []}).then((code) => {
+            await dal.interface("post", "Users", { email, password, role: "user", favoriteTags: []}).then((code) => {
                 endcode = code;
             });
         }
@@ -23,11 +23,11 @@ async function registerUser(email, password) {
     return endcode;
 }
 
-async function login(email, password) {
+async function login(dal, email, password) {
     // login user
     let jwt = null;
     let endcode = null;
-    await dal.Interface("get", "Users", { email }).then((users) => {
+    await dal.interface("get", "Users", { email }).then((users) => {
         if (users.length === 0) {
             endcode = 404;
             return
@@ -43,15 +43,15 @@ async function login(email, password) {
     return {"jwt": jwt, "statuscode": endcode}
 }
 
-async function deleteAccount(email, password) {
+async function deleteAccount(dal, email, password) {
     let endcode = null;
-    await dal.Interface("get", "Users", { email }).then(async (users) => {
+    await dal.interface("get", "Users", { email }).then(async (users) => {
         if (users.length === 0) {
             endcode = 404;
         }
         user = users[0];
         if (security.comparePassword(password, user.password)) {
-            await dal.Interface("delete", "Users", { email }).then((code) => {
+            await dal.interface("delete", "Users", { email }).then((code) => {
                 endcode = code;
             });
         } else {
@@ -61,9 +61,9 @@ async function deleteAccount(email, password) {
     return endcode;
 }
 
-async function CheckEmailExists(email) {
+async function CheckEmailExists(dal, email) {
     let emailExists = null;
-    await dal.Interface("get", "Users", { email }).then((users) => {
+    await dal.interface("get", "Users", { email }).then((users) => {
         if (users.length === 0) {
             emailExists = false;
         }
@@ -79,9 +79,9 @@ function ValidateEmail(email) {
     return isValid ? true : false;
 }
 
-async function GetUserByEmail(email) {
+async function GetUserByEmail(dal, email) {
     let user
-    await dal.Interface("get", "Users", { "email":email }).then((users) => {
+    await dal.interface("get", "Users", { "email":email }).then((users) => {
         if (users.length === 0) {
             return 404;
         }
@@ -89,7 +89,7 @@ async function GetUserByEmail(email) {
     });
     let tags = [];
     if (user.favoriteTags.length > 0) {
-        await dal.Interface("get", "Tags", { name: { $in: user.favoriteTags } }).then((tag) => {
+        await dal.interface("get", "Tags", { name: { $in: user.favoriteTags } }).then((tag) => {
             tags = tag;
         });
     }
