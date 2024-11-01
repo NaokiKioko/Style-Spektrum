@@ -46,7 +46,7 @@ app.get('/logout', (req, res) => {
     res.status(200).send('just delete the jwt <3');
 });
 
-app.get("/authenticate", auth.authenticateToken, (dal, req, res) => {
+app.get("/authenticate", auth.authenticateToken, (req, res) => {
     res.send('Authenticated user: ' + req.user.email);
 });
 
