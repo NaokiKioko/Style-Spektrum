@@ -104,9 +104,55 @@ async function GetUserByEmail(dal, email) {
     
 }
 
+async function AddFavoriteTag(dal, email, tag) {
+    let user;
+    let returncode = 200;
+    await dal.interface("get", "Users", { "email":email }).then((users) => {
+        if (users.length === 0) {
+            return 404;
+        }
+        user = users[0];
+    });
+    if (user.favoriteTags.includes(tag)) {
+        returncode = 400;
+    }
+    if (returncode === 400) {
+        return returncode;
+    }
+    user.favoriteTags.push(tag);
+    await dal.interface("patch", "Users", [{ "email":email }, { favoriteTags: user.favoriteTags }]).then((code) => {
+        returncode = code;
+    });
+    return returncode;
+}
+
+async function RemoveFavoriteTag(dal, email, tag) {
+    let user;
+    let returncode = 200;
+    await dal.interface("get", "Users", { "email":email }).then((users) => {
+        if (users.length === 0) {
+            return 404;
+        }
+        user = users[0];
+    });
+    if (!user.favoriteTags.includes(tag)) {
+        returncode = 400;
+    }
+    if (returncode === 400) {
+        return returncode;
+    }
+    user.favoriteTags = user.favoriteTags.filter(e => e !== tag);
+    await dal.interface("patch", "Users", [{ "email":email }, { favoriteTags: user.favoriteTags }]).then((code) => {
+        returncode = code;
+    });
+    return returncode;
+}
+
 module.exports = {
     registerUser,
     login,
     deleteAccount,
-    GetUserByEmail
+    GetUserByEmail,
+    AddFavoriteTag,
+    RemoveFavoriteTag
 }
