@@ -43,7 +43,7 @@ async function login(dal, email, password) {
     return {"jwt": jwt, "statuscode": endcode}
 }
 
-async function deleteAccount(dal, email, password) {
+async function DeleteAccount(dal, email, password) {
     let endcode = null;
     await dal.interface("get", "Users", { email }).then(async (users) => {
         if (users.length === 0) {
@@ -152,7 +152,7 @@ async function RemoveFavoriteTag(dal, email, tag) {
 module.exports = {
     registerUser,
     login,
-    deleteAccount,
+    DeleteAccount,
     GetUserByEmail,
     AddFavoriteTag,
     RemoveFavoriteTag

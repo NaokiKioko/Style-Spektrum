@@ -53,7 +53,7 @@ app.get("/authenticate", auth.authenticateToken, (req, res) => {
 app.delete("/delete", auth.authenticateToken, async (req, res) => {
     let email = req.user.email
     let password = req.body.password
-    let code = await bal.deleteAccount(dal, email, password)
+    let code = await bal.DeleteAccount(dal, email, password)
     if (code === 200) {
         res.status(code).send('User deleted!')
     } else {
