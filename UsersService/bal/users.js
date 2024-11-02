@@ -123,6 +123,7 @@ async function AddFavoriteTag(dal, email, tag) {
     await dal.interface("patch", "Users", [{ "email":email }, { favoriteTags: user.favoriteTags }]).then((code) => {
         returncode = code;
     });
+    AlterTagFavoriteCount(dal, tag, 1);
     return returncode;
 }
 
@@ -145,7 +146,19 @@ async function RemoveFavoriteTag(dal, email, tag) {
     await dal.interface("patch", "Users", [{ "email":email }, { favoriteTags: user.favoriteTags }]).then((code) => {
         returncode = code;
     });
+    AlterTagFavoriteCount(dal, tag, -1);
     return returncode;
+}
+
+async function AlterTagFavoriteCount(dal, tag, ammount) {
+    dal.interface("get", "Tags", { "name":tag }).then((tags) => {
+        if (tags.length === 0) {
+            return 404;
+        }
+        let tagData = tags[0];
+        tagData.favoriteCount += ammount;
+        dal.interface("patch", "Tags", [{ "name":tag }, { favoriteCount: tagData.favoriteCount }])
+    });
 }
 
 
