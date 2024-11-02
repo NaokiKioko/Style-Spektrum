@@ -156,8 +156,8 @@ async function AlterTagFavoriteCount(dal, tag, ammount) {
             return 404;
         }
         let tagData = tags[0];
-        tagData.favoriteCount += ammount;
-        dal.interface("patch", "Tags", [{ "name":tag }, { favoriteCount: tagData.favoriteCount }])
+        tagData.favoritecount = tagData.favoritecount + ammount;
+        dal.interface("patch", "Tags", [{ "name":tag }, { "favoritecount": tagData.favoritecount }])
     });
 }
 
