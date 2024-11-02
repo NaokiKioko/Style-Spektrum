@@ -96,6 +96,8 @@ func main() {
 	http.HandleFunc("/handle-register", HandleRegister)
 	http.HandleFunc("/catalog", GetCatalog)
 	http.HandleFunc("/catalog/", GetCatalogStyleSearch)
+	http.HandleFunc("/favorite/tag/", FavoriteTag)
+	http.HandleFunc("/unfavorite/tag/", UnfavoriteTag)
 
 	if err := http.ListenAndServe(fmt.Sprint(":", PORT), nil); err != nil {
 		fmt.Println("Error starting server:", err)
@@ -114,7 +116,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	if len(user.FavoriteTags) == 1 && user.FavoriteTags[0].Name == "" {
 		user.FavoriteTags = []Tag{}
 	}
-	resp, err := MakehttpGetRequest(CATALOG_SERVICE_URL + "/tags", "")
+	resp, err := MakehttpGetRequest(CATALOG_SERVICE_URL+"/tags", "")
 	if err != nil {
 		log.Fatalf("Error getting tags from catalog service")
 	}
@@ -203,6 +205,7 @@ func GetCatalog(w http.ResponseWriter, r *http.Request) {
 	ResponseToObj(resp, &products)
 	renderTemplate(w, "catalog.html", CatalogPageData{products, nil})
 }
+
 func GetCatalogStyleSearch(w http.ResponseWriter, r *http.Request) {
 	resp, err := MakehttpGetRequest(CATALOG_SERVICE_URL+"/catalog/tags/"+r.URL.Path[len("/catalog/"):], "")
 	if err != nil {
@@ -214,6 +217,47 @@ func GetCatalogStyleSearch(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "catalog.html", CatalogPageData{products, nil})
 }
 
+func FavoriteTag(w http.ResponseWriter, r *http.Request) {
+	var tag string = r.URL.Path[len("/favorite/tag/"):]
+	var user, jwt, err = GetUserFromCookies(r)
+	if err != nil {
+		// User is not logged in and cant favorite tags
+	}
+	if jwt == "" {
+		ClearUsersCookies(w)
+		w.Header().Set("HX-Redirect", "/")
+		return
+	}
+	_, err = MakehttpPostRequest(USER_SERVICE_URL+"/favorite/"+tag, jwt, nil)
+	if err != nil {
+		log.Fatalf("Error favoriting tag")
+	}
+	user.FavoriteTags = append(user.FavoriteTags, Tag{Name: tag})
+	SetUsersCookies(w, user, jwt)
+}
+
+func UnfavoriteTag(w http.ResponseWriter, r *http.Request) {
+	var tag string = r.URL.Path[len("/unfavorite/tag/"):]
+	var user, jwt, err = GetUserFromCookies(r)
+	if err != nil {
+		// User is not logged in and cant favorite tags
+	}
+	if jwt == "" {
+		ClearUsersCookies(w)
+		w.Header().Set("HX-Redirect", "/")
+		return
+	}
+	_, err = MakehttpDeleteRequest(USER_SERVICE_URL+"/favorite/"+tag, jwt)
+	if err != nil {
+		log.Fatalf("Error unfavoriting tag")
+	}
+	for x, favtag := range user.FavoriteTags {
+		if favtag.Name == tag {
+			user.FavoriteTags = append(user.FavoriteTags[:x], user.FavoriteTags[x+1:]...)
+		}
+	}
+	SetUsersCookies(w, user, jwt)
+}
 // ----------------- Helper functions -----------------
 func SetUsersCookies(w http.ResponseWriter, user User, jwt string) {
 	// Gather the cookies in a slice
@@ -289,6 +333,7 @@ func GetUserFromCookies(r *http.Request) (User, string, error) {
 	}
 	return user, jwt, nil
 }
+
 func ClearUsersCookies(w http.ResponseWriter) {
 	// Gather the cookies in a slice
 	cookies := []http.Cookie{
@@ -328,6 +373,7 @@ func RemoveFavoriteTagsFromAllTags(alltags []Tag, favtags []Tag) []Tag {
 	}
 	return alltags
 }
+
 func MakehttpGetRequest(url string, jwt string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -342,6 +388,7 @@ func MakehttpGetRequest(url string, jwt string) (*http.Response, error) {
 	}
 	return resp, err
 }
+
 func MakehttpPostRequest(url string, jwt string, body *strings.Reader) (*http.Response, error) {
 	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
@@ -363,6 +410,29 @@ func MakehttpPostRequest(url string, jwt string, body *strings.Reader) (*http.Re
 	}
 	return resp, nil
 }
+
+func MakehttpDeleteRequest(url string, jwt string) (*http.Response, error) {
+	req, err := http.NewRequest("DELETE", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	// Add Authorization header if jwt is provided
+	if jwt != "" {
+		req.Header.Add("authorization", "Bearer "+jwt)
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	// Optionally, check if the response was successful
+	if resp.StatusCode != http.StatusOK {
+		return resp, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+	return resp, nil
+}
+
 func ResponseToObj(resp *http.Response, obj interface{}) {
 	if resp.StatusCode != http.StatusOK {
 		log.Fatalf("Failed to get response from:" + resp.Request.URL.String())
@@ -371,12 +441,14 @@ func ResponseToObj(resp *http.Response, obj interface{}) {
 		log.Fatalf("Failed to decode response")
 	}
 }
+
 func sortTagsByFavoriteCount(tags []Tag) []Tag {
 	sort.Slice(tags, func(i, j int) bool {
 		return tags[i].FavoriteCount > tags[j].FavoriteCount
 	})
 	return tags
 }
+
 func renderTemplate(w http.ResponseWriter, templateName string, data interface{}) {
 	t, err := template.ParseFiles("templates/" + templateName)
 	if err != nil {
