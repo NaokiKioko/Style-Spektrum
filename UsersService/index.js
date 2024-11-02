@@ -53,7 +53,7 @@ app.get("/authenticate", auth.authenticateToken, (req, res) => {
 app.delete("/delete", auth.authenticateToken, async (req, res) => {
     let email = req.user.email
     let password = req.body.password
-    let code = await bal.deleteAccount(dal, email, password)
+    let code = await bal.DeleteAccount(dal, email, password)
     if (code === 200) {
         res.status(code).send('User deleted!')
     } else {
@@ -61,7 +61,7 @@ app.delete("/delete", auth.authenticateToken, async (req, res) => {
     }
 });
 
-app.post('/favorite/:tag', auth.authenticateToken, async (req, res) => {
+app.post('/favorite/tag/:tag', auth.authenticateToken, async (req, res) => {
     let email = req.user.email
     let tag = req.params.tag
     let code = await bal.AddFavoriteTag(dal, email, tag)
@@ -72,7 +72,7 @@ app.post('/favorite/:tag', auth.authenticateToken, async (req, res) => {
     }
 });
 
-app.delete('/favorite/:tag', auth.authenticateToken, async (req, res) => {
+app.delete('/favorite/tag/:tag', auth.authenticateToken, async (req, res) => {
     let email = req.user.email
     let tag = req.params.tag
     let code = await bal.RemoveFavoriteTag(dal, email, tag)

@@ -43,7 +43,7 @@ async function login(dal, email, password) {
     return {"jwt": jwt, "statuscode": endcode}
 }
 
-async function deleteAccount(dal, email, password) {
+async function DeleteAccount(dal, email, password) {
     let endcode = null;
     await dal.interface("get", "Users", { email }).then(async (users) => {
         if (users.length === 0) {
@@ -123,6 +123,7 @@ async function AddFavoriteTag(dal, email, tag) {
     await dal.interface("patch", "Users", [{ "email":email }, { favoriteTags: user.favoriteTags }]).then((code) => {
         returncode = code;
     });
+    AlterTagFavoriteCount(dal, tag, 1);
     return returncode;
 }
 
@@ -145,13 +146,26 @@ async function RemoveFavoriteTag(dal, email, tag) {
     await dal.interface("patch", "Users", [{ "email":email }, { favoriteTags: user.favoriteTags }]).then((code) => {
         returncode = code;
     });
+    AlterTagFavoriteCount(dal, tag, -1);
     return returncode;
 }
+
+async function AlterTagFavoriteCount(dal, tag, ammount) {
+    dal.interface("get", "Tags", { "name":tag }).then((tags) => {
+        if (tags.length === 0) {
+            return 404;
+        }
+        let tagData = tags[0];
+        tagData.favoritecount = tagData.favoritecount + ammount;
+        dal.interface("patch", "Tags", [{ "name":tag }, { "favoritecount": tagData.favoritecount }])
+    });
+}
+
 
 module.exports = {
     registerUser,
     login,
-    deleteAccount,
+    DeleteAccount,
     GetUserByEmail,
     AddFavoriteTag,
     RemoveFavoriteTag
