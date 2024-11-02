@@ -59,7 +59,28 @@ app.delete("/delete", auth.authenticateToken, async (req, res) => {
     } else {
         res.status(code).send('Error deleting user!')
     }
+});
 
+app.post('/favorite/tag/:tag', auth.authenticateToken, async (req, res) => {
+    let email = req.user.email
+    let tag = req.params.tag
+    let code = await bal.AddFavoriteTag(dal, email, tag)
+    if (code === 200) {
+        res.status(code).send('Tag added to favorites!')
+    } else {
+        res.status(code).send('Error adding tag to favorites!')
+    }
+});
+
+app.delete('/favorite/tag/:tag', auth.authenticateToken, async (req, res) => {
+    let email = req.user.email
+    let tag = req.params.tag
+    let code = await bal.RemoveFavoriteTag(dal, email, tag)
+    if (code === 200) {
+        res.status(code).send('Tag removed from favorites!')
+    } else {
+        res.status(code).send('Error removing tag from favorites!')
+    }
 });
 
 app.listen(port, () => {
