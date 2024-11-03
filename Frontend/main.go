@@ -96,8 +96,8 @@ func main() {
 	http.HandleFunc("/handle-register", HandleRegister)
 	http.HandleFunc("/catalog", GetCatalog)
 	http.HandleFunc("/catalog/", GetCatalogStyleSearch)
-	http.HandleFunc("/favorite/tag/", FavoriteTag)
-	http.HandleFunc("/unfavorite/tag/", UnfavoriteTag)
+	http.HandleFunc("/favorite/tag/", HandleFavoriteTag)
+	http.HandleFunc("/unfavorite/tag/", HandleUnfavoriteTag)
 
 	if err := http.ListenAndServe(fmt.Sprint(":", PORT), nil); err != nil {
 		fmt.Println("Error starting server:", err)
@@ -217,37 +217,38 @@ func GetCatalogStyleSearch(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "catalog.html", CatalogPageData{products, nil})
 }
 
-func FavoriteTag(w http.ResponseWriter, r *http.Request) {
+func HandleFavoriteTag(w http.ResponseWriter, r *http.Request) {
 	var tag string = r.URL.Path[len("/favorite/tag/"):]
 	var user, jwt, err = GetUserFromCookies(r)
-	if err != nil {
-		// User is not logged in and cant favorite tags
-	}
+	// if err != nil {
+	// 	// User is not logged in and cant favorite tags
+	// }
 	if jwt == "" {
 		ClearUsersCookies(w)
 		w.Header().Set("HX-Redirect", "/")
 		return
 	}
-	_, err = MakehttpPostRequest(USER_SERVICE_URL+"/favorite/"+tag, jwt, nil)
+	_, err = MakehttpPostRequest(USER_SERVICE_URL+"/favorite/tag/"+tag, jwt, nil)
 	if err != nil {
 		log.Fatalf("Error favoriting tag")
 	}
 	user.FavoriteTags = append(user.FavoriteTags, Tag{Name: tag})
 	SetUsersCookies(w, user, jwt)
+	renderTemplate(w, "favoriteTag.html", Tag{Name: tag})
 }
 
-func UnfavoriteTag(w http.ResponseWriter, r *http.Request) {
+func HandleUnfavoriteTag(w http.ResponseWriter, r *http.Request) {
 	var tag string = r.URL.Path[len("/unfavorite/tag/"):]
 	var user, jwt, err = GetUserFromCookies(r)
-	if err != nil {
-		// User is not logged in and cant favorite tags
-	}
+	// if err != nil {
+	// 	// User is not logged in and cant favorite tags
+	// }
 	if jwt == "" {
 		ClearUsersCookies(w)
 		w.Header().Set("HX-Redirect", "/")
 		return
 	}
-	_, err = MakehttpDeleteRequest(USER_SERVICE_URL+"/favorite/"+tag, jwt)
+	_, err = MakehttpDeleteRequest(USER_SERVICE_URL+"/favorite/tag/"+tag, jwt)
 	if err != nil {
 		log.Fatalf("Error unfavoriting tag")
 	}
@@ -257,7 +258,9 @@ func UnfavoriteTag(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	SetUsersCookies(w, user, jwt)
+	renderTemplate(w, "normalTag.html", Tag{Name: tag})
 }
+
 // ----------------- Helper functions -----------------
 func SetUsersCookies(w http.ResponseWriter, user User, jwt string) {
 	// Gather the cookies in a slice

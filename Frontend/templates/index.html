@@ -21,14 +21,14 @@
                     </li>
             </ul>
             <h2 class="text-xl text-[#e0e0e0] text-center font-semibold my-2">Your Styles</h2>
+            <ul id="FavoriteTagsList" class="bg-[#e0e0e0] text-[#1a1a1a] ">
             {{if .User.FavoriteTags}}
-                <ul class="bg-[#e0e0e0] text-[#1a1a1a] ">
                     {{range .FavoriteTags}}
-                        <li hx-get="/catalog/{{.Name}}" hx-target="#MainView" class="flex justify-end items-center outline bg-[#e0e0e0] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
-                            <a href="#" class="block px-4 py-2 rounded-md">{{.Name}}</a>
-                            <span class="ml-2 pr-2 cursor-pointer text-[#1a1a1a] hover:text-yellow-500" style="font-size: 150%">
-                                <span class="inline-block">★</span>
-                            </span>
+                        <li id="{{.Name}}FavoriteLI" class="flex justify-end items-center outline bg-[#e0e0e0] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
+                            <p hx-get="/catalog/{{.Name}}" hx-trigger="click" hx-target="#MainView" class="flex-grow block px-4 py-2 rounded-md">{{.Name}}</p>
+                            {{ if $.User.Username}}
+                                <p hx-post="/favorite/tag/{{.Name}}" hx-trigger="click" hx-target="#FavoriteTagsList" hx-swap="beforeend" hx-on::after-request="DeleteElement('{{.Name}}NormalLI')"  class="ml-2 pr-2 cursor-pointer text-[#1a1a1a] hover:text-yellow-500 inline-block" style="font-size: 150%">★</p>
+                            {{end}}
                         </li>
                     {{end}}
             {{else}}
@@ -38,13 +38,13 @@
             {{end}}
                 </ul>
             <h2 class="text-xl text-white font-semibold text-center my-2">Popular Styles</h2>
-            <ul class="bg-white text-black ">
+            <ul id="NormalTagsList" class="bg-white text-black ">
                 {{range .AllTags}}
-                    <li hx-get="/catalog/{{.Name}}" hx-target="#MainView" class="flex justify-end outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
-                        <a href="#" class="block px-4 py-2 rounded-md">{{.Name}}</a>
-                        <span class="ml-2 pr-2 cursor-pointer text-[#1a1a1a] hover:text-yellow-500" style="font-size: 150%">
-                            <span class="inline-block">☆</span>
-                        </span>
+                    <li id="{{.Name}}NormalLI" class="flex justify-end outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
+                        <p hx-get="/catalog/{{.Name}}" hx-trigger="click" hx-target="#MainView" class="flex-grow block px-4 py-2 rounded-md">{{.Name}}</p>
+                        {{ if $.User.Username}}
+                            <p hx-post="/favorite/tag/{{.Name}}" hx-trigger="click" hx-target="#FavoriteTagsList" hx-swap="beforeend" hx-on::after-request="DeleteElement('{{.Name}}NormalLI')"  class="ml-2 pr-2 cursor-pointer text-[#1a1a1a] hover:text-yellow-500 inline-block" style="font-size: 150%">☆</p>
+                        {{end}}
                     </li>
                 {{end}}
             </ul>
@@ -86,6 +86,12 @@
             background: transparent; 
         }
     </style>
+    <script>
+        function DeleteElement(id) {
+            var element = document.getElementById(id);
+            element.parentNode.removeChild(element);
+        }
+    </script>
 
 </body>
 </html>
