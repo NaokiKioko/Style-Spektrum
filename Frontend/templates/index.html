@@ -16,23 +16,23 @@
         <aside class="bg-[#1a1a1a] h-screen pr-4 overflow-auto w-1/10 max-h-full" style="overflow-y: auto; scrollbar-width: thin; scrollbar-color: transparent transparent;">
             <h2 class="text-xl text-white font-semibold text-center my-2">ALL Styles</h2>
             <ul class="bg-white text-black ">
-                    <li hx-get="/catalog" hx-target="#MainView" class="flex justify-center outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
+                    <li id="AlltagsLI" hx-get="/catalog" hx-target="#MainView" hx-on:click="SelectElement('AlltagsLI')" class="flex justify-center outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
                         <a href="#" class="block px-4 py-2 rounded-md">ALL</a>
                     </li>
             </ul>
             <h2 class="text-xl text-[#e0e0e0] text-center font-semibold my-2">Your Styles</h2>
-            <ul id="FavoriteTagsList" class="bg-[#e0e0e0] text-[#1a1a1a] ">
+            <ul id="FavoriteTagsList" class="bg-[#e0e0e0] text-[#1a1a1a]">
             {{if .User.FavoriteTags}}
                     {{range .FavoriteTags}}
                         <li id="{{.Name}}FavoriteLI" class="flex justify-end items-center outline bg-[#e0e0e0] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
-                            <p hx-get="/catalog/{{.Name}}" hx-trigger="click" hx-target="#MainView" class="flex-grow block px-4 py-2 rounded-md">{{.Name}}</p>
+                            <p hx-get="/catalog/{{.Name}}" hx-trigger="click" hx-target="#MainView" hx-on:click="SelectElement('{{.Name}}FavoriteLI')" class="flex-grow block px-4 py-2 rounded-md">{{.Name}}</p>
                             {{ if $.User.Username}}
-                                <p hx-post="/favorite/tag/{{.Name}}" hx-trigger="click" hx-target="#FavoriteTagsList" hx-swap="beforeend" hx-on::after-request="DeleteElement('{{.Name}}NormalLI')"  class="ml-2 pr-2 cursor-pointer text-[#1a1a1a] hover:text-yellow-500 inline-block" style="font-size: 150%">★</p>
+                                <p hx-get="/unfavorite/tag/{{.Name}}" hx-trigger="click" hx-target="#NormalTagsList" hx-swap="beforeend" hx-on::after-request="DeleteElement('{{.Name}}FavoriteLI')"  class="ml-2 pr-2 cursor-pointer text-[#1a1a1a] hover:text-yellow-500 inline-block" style="font-size: 150%">★</p>
                             {{end}}
                         </li>
                     {{end}}
             {{else}}
-                <li class="flex items-center justify-center outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
+                <li id="NoElementsFavoriteLI" class="flex items-center justify-center outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
                     <p href="#" class="block px-4 py-2 rounded-md">No Favs Styles</p>
                 </li>
             {{end}}
@@ -41,9 +41,9 @@
             <ul id="NormalTagsList" class="bg-white text-black ">
                 {{range .AllTags}}
                     <li id="{{.Name}}NormalLI" class="flex justify-end outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
-                        <p hx-get="/catalog/{{.Name}}" hx-trigger="click" hx-target="#MainView" class="flex-grow block px-4 py-2 rounded-md">{{.Name}}</p>
+                        <p hx-get="/catalog/{{.Name}}" hx-trigger="click" hx-target="#MainView" hx-on:click="SelectElement('{{.Name}}NormalLI')" class="flex-grow block px-4 py-2 rounded-md">{{.Name}}</p>
                         {{ if $.User.Username}}
-                            <p hx-post="/favorite/tag/{{.Name}}" hx-trigger="click" hx-target="#FavoriteTagsList" hx-swap="beforeend" hx-on::after-request="DeleteElement('{{.Name}}NormalLI')"  class="ml-2 pr-2 cursor-pointer text-[#1a1a1a] hover:text-yellow-500 inline-block" style="font-size: 150%">☆</p>
+                            <p hx-get="/favorite/tag/{{.Name}}" hx-trigger="click" hx-target="#FavoriteTagsList" hx-swap="beforeend" hx-on::after-request="DeleteElement('{{.Name}}NormalLI')"  class="ml-2 pr-2 cursor-pointer text-[#1a1a1a] hover:text-yellow-500 inline-block" style="font-size: 150%">☆</p>
                         {{end}}
                     </li>
                 {{end}}
@@ -91,6 +91,39 @@
             var element = document.getElementById(id);
             element.parentNode.removeChild(element);
         }
+
+        function AddOrDeleteNoElementsLI() {
+            var element = document.getElementById("FavoriteTagsList");
+            if (element.childElementCount > 1 && element.contains(document.getElementById("NoElementsFavoriteLI"))) {
+                DeleteElement("NoElementsFavoriteLI");
+            } else if (element.childElementCount == 0) {
+                var li = document.createElement("li");
+                li.id = "NoElementsFavoriteLI";
+                li.className = "flex items-center justify-center outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]";
+                li.innerHTML = "<p href='#' class='block px-4 py-2 rounded-md'>No Favs Styles</p>";
+                element.appendChild(li);
+            }
+        }
+        let LastElementClicked = null;
+
+        function SelectElement(id) {
+            // Reset styles for the last clicked element
+            if (LastElementClicked) {
+                LastElementClicked.style.backgroundColor = "#e0e0e0";
+                LastElementClicked.style.color = "#1a1a1a";
+            }
+    
+            // Apply new styles to the clicked element
+            var element = document.getElementById(id);
+            if (element) {
+                element.style.backgroundColor = "#1a1a1a";
+                element.style.color = "#e0e0e0";
+                LastElementClicked = element;
+            }
+        }
+    const observer = new MutationObserver(AddOrDeleteNoElementsLI);
+    observer.observe(document.getElementById("FavoriteTagsList"), { childList: true });
+    SelectElement('AlltagsLI');
     </script>
 
 </body>

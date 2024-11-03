@@ -1,4 +1,0 @@
-<li id="{{.Name}}FavoriteLI" class="flex justify-end items-center outline bg-[#e0e0e0] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
-    <p hx-get="/catalog/{{.Name}}" hx-trigger="click" hx-target="#MainView" class="flex-grow block px-4 py-2 rounded-md">{{.Name}}</p>
-    <p hx-post="/favorite/tag/{{.Name}}" hx-trigger="click" hx-target="#FavoriteTagsList" hx-swap="beforeend" hx-on::after-request="DeleteElement('{{.Name}}NormalLI')"  class="ml-2 pr-2 cursor-pointer text-[#1a1a1a] hover:text-yellow-500 inline-block" style="font-size: 150%">★</p>
-</li>

@@ -113,7 +113,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("HX-Redirect", "/")
 		return
 	}
-	if len(user.FavoriteTags) == 1 && user.FavoriteTags[0].Name == "" {
+	if len(user.FavoriteTags) <= 0 {
 		user.FavoriteTags = []Tag{}
 	}
 	resp, err := MakehttpGetRequest(CATALOG_SERVICE_URL+"/tags", "")
@@ -228,13 +228,13 @@ func HandleFavoriteTag(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("HX-Redirect", "/")
 		return
 	}
-	_, err = MakehttpPostRequest(USER_SERVICE_URL+"/favorite/tag/"+tag, jwt, nil)
+	_, err = MakehttpPostRequest(USER_SERVICE_URL+"/favorite/tag/"+tag, jwt, strings.NewReader(`{}`))
 	if err != nil {
-		log.Fatalf("Error favoriting tag")
+		log.Print("Tag already in favorites")
 	}
 	user.FavoriteTags = append(user.FavoriteTags, Tag{Name: tag})
 	SetUsersCookies(w, user, jwt)
-	renderTemplate(w, "favoriteTag.html", Tag{Name: tag})
+	renderTemplate(w, "favoriteTag.html", Tag{Name: tag, FavoriteCount: 0})
 }
 
 func HandleUnfavoriteTag(w http.ResponseWriter, r *http.Request) {
@@ -250,7 +250,7 @@ func HandleUnfavoriteTag(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = MakehttpDeleteRequest(USER_SERVICE_URL+"/favorite/tag/"+tag, jwt)
 	if err != nil {
-		log.Fatalf("Error unfavoriting tag")
+		log.Print("Tag not found in favorites")
 	}
 	for x, favtag := range user.FavoriteTags {
 		if favtag.Name == tag {
@@ -258,7 +258,7 @@ func HandleUnfavoriteTag(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	SetUsersCookies(w, user, jwt)
-	renderTemplate(w, "normalTag.html", Tag{Name: tag})
+	renderTemplate(w, "normalTag.html", Tag{Name: tag, FavoriteCount: 0})
 }
 
 // ----------------- Helper functions -----------------
@@ -334,6 +334,11 @@ func GetUserFromCookies(r *http.Request) (User, string, error) {
 	for _, name := range favTagNames {
 		user.FavoriteTags = append(user.FavoriteTags, Tag{Name: name})
 	}
+	for x, tag := range user.FavoriteTags {
+		if tag.Name == "" {
+			user.FavoriteTags = append(user.FavoriteTags[:x], user.FavoriteTags[x+1:]...)
+		}
+	}
 	return user, jwt, nil
 }
 
@@ -367,15 +372,22 @@ func ClearUsersCookies(w http.ResponseWriter) {
 }
 
 func RemoveFavoriteTagsFromAllTags(alltags []Tag, favtags []Tag) []Tag {
-	for x, tag := range alltags {
+	for x := 0; x < len(alltags); {
+		removed := false
 		for _, favtag := range favtags {
-			if tag.Name == favtag.Name {
+			if alltags[x].Name == favtag.Name {
 				alltags = append(alltags[:x], alltags[x+1:]...)
+				removed = true
+				break
 			}
+		}
+		if !removed {
+			x++
 		}
 	}
 	return alltags
 }
+
 
 func MakehttpGetRequest(url string, jwt string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
