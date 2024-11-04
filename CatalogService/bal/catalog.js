@@ -18,7 +18,7 @@ async function PostCatalog(dal, catalog) {
     if (code === 500) {
         return 500;
     } else {
-        await PostTags(catalog.Tags);
+        await PostTags(dal, catalog.Tags);
     }
     return code;
 }

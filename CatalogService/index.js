@@ -39,7 +39,7 @@ app.get('/catalog/:id', async (req, res) => {
 
 
 app.post('/catalog', async (req, res) => {
-        await bal.PostCatalog(dal, req.body);
+    await bal.PostCatalog(dal, req.body);
     res.sendStatus(201);
 });
 
@@ -73,7 +73,7 @@ app.delete('/catalog/:id', async (req, res) => {
 });
 
 app.get('/tags', async (req, res) => {
-        const catalogs = await bal.GetTags(dal, []);
+    const catalogs = await bal.GetTags(dal, []);
     for (let i = 0; i < catalogs.length; i++) {
         delete catalogs[i]._id;
     }
