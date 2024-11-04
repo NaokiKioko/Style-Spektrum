@@ -1,38 +1,39 @@
-
+<div id="MainView" class="grid grid-cols-5 gap-6 overflow-auto" style="overflow-y: auto; scrollbar-width: thin; scrollbar-color: transparent transparent;">
     {{ if .Error }}
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
             <span class="block sm:inline">{{ .Error.Message }}</span>
-            <span class="absolute top-0 bottom-0 right-0 px-4 py-3">
+            <span class="absolute top-0 bottom-0 right-0 px-4 py-3">    
                 <svg class="fill-current h-6 w-6 text-red-500" role="button" viewBox="0 0 20 20">
                     <path d="M14.59 8L10 12.59 5.41 8 4 9.41l6 6 6-6z"></path>
                 </svg>
             </span>
         </div>
     {{ else }}
-            {{ range .Products }}
-                <div class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
-                    <div class="aspect-w-1 aspect-h-1 bg-gray-200 rounded-lg overflow-hidden">
-                        <img src="{{ index .Images 0 }}" alt="{{ .Name }}" class="object-cover w-full h-40" />
-                    </div>
-                    <div class="mt-4">
-                        <h2 class="text-lg font-semibold truncate" style="max-width: 30ch;">{{ .Name }}</h2>
-                        <p class="text-gray-500">{{ printf "$%.2f" .Price }}</p>
-                    </div>
-                    <div class="mt-2">
-                        <span class="text-yellow-400 font-semibold">
-                            {{ printf "%.1f" .Rating }} ★
-                        </span>
-                    </div>
-                    <div class="flex space-x-2 mt-2 grid grid-cols-3 gap-1">
-                        {{ range $index, $tag := .Tags }}
-                            {{ if lt $index 6 }}
-                                <span class="text-xs bg-gray-200 text-gray-700 rounded-full px-2 py-1 truncate inline-block" style="max-width: 10ch;">{{ $tag }}</span>
-                            {{ end }}
-                        {{ end }}
-                    </div>
-                    <div class="mt-2">
-                        <a href="{{ .URL }}" class="text-indigo-600 hover:underline text-sm font-medium">View Product</a>
-                    </div>
+        {{ range .Products }}
+            <div hx-get="/product/{{.ID}}" hx-target="#MainView" hx-swap="outerHTML" class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+                <div class="aspect-w-1 aspect-h-1 bg-gray-200 rounded-lg overflow-hidden">
+                    <img src="{{ index .Images 0 }}" alt="{{ .Name }}" class="object-cover w-full h-40" />
                 </div>
-            {{ end }}
-{{ end }}
+                <div class="mt-4">
+                    <h2 class="text-lg font-semibold truncate" style="max-width: 30ch;">{{ .Name }}</h2>
+                    <p class="text-gray-500">{{ printf "$%.2f" .Price }}</p>
+                </div>
+                <div class="mt-2">
+                    <span class="text-yellow-400 font-semibold">
+                        {{ printf "%.1f" .Rating }} ★
+                    </span>
+                </div>
+                <div class="flex space-x-2 mt-2 grid grid-cols-3 gap-1">
+                    {{ range $index, $tag := .Tags }}
+                        {{ if lt $index 6 }}
+                            <span class="text-xs bg-gray-200 text-gray-700 rounded-full px-2 py-1 truncate inline-block" style="max-width: 10ch;">{{ $tag }}</span>
+                        {{ end }}
+                    {{ end }}
+                </div>
+                <div class="mt-2">
+                    <a href="{{ .URL }}" class="text-indigo-600 hover:underline text-sm font-medium">View Origin</a>
+                </div>
+            </div>
+        {{ end }}
+    {{ end }}
+</div>

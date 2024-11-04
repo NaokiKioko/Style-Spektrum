@@ -111,7 +111,6 @@ func HandleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Method not allowed, POST only", http.StatusMethodNotAllowed)
 	var page, registerOject, err = logic.HandleRegister(w, r)
 	if err != nil {
 		return

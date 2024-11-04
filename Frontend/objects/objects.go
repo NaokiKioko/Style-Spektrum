@@ -18,7 +18,7 @@ type JWTObject struct {
 	Token string
 }
 type Product struct {
-	ID          string
+	ID          string `json:"_id"`
 	Name        string
 	Price       float64
 	Tags        []string
