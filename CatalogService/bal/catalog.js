@@ -1,11 +1,12 @@
 const Databaseinterface = require('../dal/mongoDB.js'); // Import the class
+const { ObjectId } = require('mongodb');
 
 async function GetCatalogs(dal) {
     return await dal.interface("get", "Catalog", {});
 }
 
 async function GetCatalog(dal, id) {
-    return await dal.interface("get", "Catalog", {_id: new ObjectId(id)});
+    return await dal.interface("get", "Catalog", {_id: ObjectId.createFromHexString(id)});
 }
 
 async function GetCatalogbyTags(dal, tags) {
