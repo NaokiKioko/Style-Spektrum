@@ -1,4 +1,4 @@
-<div id="MainView" class="grid grid-cols-5 gap-6 overflow-auto" style="overflow-y: auto; scrollbar-width: thin; scrollbar-color: transparent transparent;">
+<div id="MainView" class="grid grid-cols-5 gap-6 overflow-auto" style="height: 83vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: transparent transparent;">
     {{ if .Error }}
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
             <span class="block sm:inline">{{ .Error.Message }}</span>
@@ -10,26 +10,28 @@
         </div>
     {{ else }}
         {{ range .Products }}
-            <div hx-get="/product/{{.ID}}" hx-target="#MainView" hx-swap="outerHTML" class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
-                <div class="aspect-w-1 aspect-h-1 bg-gray-200 rounded-lg overflow-hidden">
-                    <img src="{{ index .Images 0 }}" alt="{{ .Name }}" class="object-cover w-full h-40" />
-                </div>
-                <div class="mt-4">
-                    <h2 class="text-lg font-semibold truncate" style="max-width: 30ch;">{{ .Name }}</h2>
-                    <p class="text-gray-500">{{ printf "$%.2f" .Price }}</p>
-                </div>
-                <div class="mt-2">
-                    <span class="text-yellow-400 font-semibold">
-                        {{ printf "%.1f" .Rating }} ★
-                    </span>
-                </div>
-                <div class="flex space-x-2 mt-2 grid grid-cols-3 gap-1">
-                    {{ range $index, $tag := .Tags }}
-                        {{ if lt $index 6 }}
-                            <span class="text-xs bg-gray-200 text-gray-700 rounded-full px-2 py-1 truncate inline-block" style="max-width: 10ch;">{{ $tag }}</span>
+            <div  class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+                <div hx-get="/product/{{.ID}}" hx-target="#MainView" hx-swap="outerHTML">
+                    <div class="aspect-w-1 aspect-h-1 bg-gray-200 rounded-lg overflow-hidden">
+                        <img src="{{ index .Images 0 }}" alt="{{ .Name }}" class="object-cover w-full h-40" />
+                    </div>
+                    <div class="mt-4">
+                        <h2 class="text-lg font-semibold truncate" style="max-width: 30ch;">{{ .Name }}</h2>
+                        <p class="text-gray-500">{{ printf "$%.2f" .Price }}</p>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-yellow-400 font-semibold">
+                            {{ printf "%.1f" .Rating }} ★
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mt-2">
+                        {{ range $index, $tag := .Tags }}
+                            {{ if lt $index 6 }}
+                                <span class="text-xs bg-gray-200 text-gray-700 rounded-full px-3 py-1 truncate text-center" style="min-width: 5ch; max-width: 15ch;">{{ $tag }}</span>
+                            {{ end }}
                         {{ end }}
-                    {{ end }}
-                </div>
+                    </div>            
+                </div> 
                 <div class="mt-2">
                     <a href="{{ .URL }}" class="text-indigo-600 hover:underline text-sm font-medium">View Origin</a>
                 </div>

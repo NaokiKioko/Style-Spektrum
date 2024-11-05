@@ -145,3 +145,15 @@ func HandleUnfavoriteTag(w http.ResponseWriter, r *http.Request) (interface{}, e
 	helper.SetUsersCookies(w, user, jwt)
 	return objects.Tag{Name: tag, FavoriteCount: 0}, nil
 }
+
+func GetProduct(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+	var productid string = r.URL.Path[len("/product/"):]
+	resp, err := helper.MakehttpGetRequest(CATALOG_SERVICE_URL+"/catalog/"+productid, "")
+	if err != nil {
+		return nil, errors.New("error getting product from catalog service")
+	}
+	defer resp.Body.Close()
+	var product objects.Product
+	helper.ResponseToObj(resp, &product)
+	return product, nil
+}

@@ -1,0 +1,35 @@
+<div id="MainView" class="overflow-auto" style="height: 83vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: transparent transparent;">
+    {{ if .Error }}
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <span class="block sm:inline">{{ .Error.Message }}</span>
+        </div>
+    {{ else }}
+        <div class="flex">
+            <div class="w-1/2">
+                <div class="aspect-w-1 aspect-h-1 bg-gray-200 rounded-lg overflow-hidden">
+                    {{ range .Images }}
+                        <img src="{{ . }}" class="object-cover" />
+                    {{ end }}
+                </div>
+            </div>
+            <div class="w-1/2 p-4">
+                <h2 class="text-lg font-semibold">{{ .Name }}</h2>
+                <p class="text-#1a1a1a">{{ printf "$%.2f" .Price }}</p>
+                <div class="mt-2">
+                    <span class="text-yellow-400 font-semibold">
+                        {{ printf "%.1f" .Rating }} ★
+                    </span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 mt-2">
+                    {{ range .Tags }}
+                        <span class="text-xs bg-gray-200 text-gray-700 rounded-full px-3 py-1 truncate text-center" style="min-width: 5ch; max-width: 15ch;">{{ . }}</span>
+                    {{ end }}
+                </div>
+                <div class="mt-2">
+                    <p class="text-gray-600">{{ .Description }}</p>
+                </div>
+                <div class="mt-2">
+                    <button href="{{ .URL }}" class="text-indigo-600 hover:underline text-sm font-medium">View Origin</button>
+                </div>
+        </div>
+</div>

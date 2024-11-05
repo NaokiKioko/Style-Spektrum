@@ -9,7 +9,7 @@
     <title>Style Spektrum</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body id="PageBody" class="bg-white text-black">
+<body id="PageBody">
     <!-- Main Layout with Sidebar and Content -->
     <div class="flex h-full">
     <!-- Sidebar for Styles -->
@@ -54,8 +54,8 @@
         <!-- Main Content Area -->
         <main class="flex-1">
             <!-- Logo as Image -->
-            <div class="justify-center">
-                <div class="flex justify-end bg-[#1a1a1a] space-x-4 back tp-1">
+            <div class="justify-center bg-transparent">
+                <div class="flex justify-end bg-[#1a1a1a] space-x-4 back tp-1 bg-opacity-100">
                     {{ if .User.Username}}
                     <a href="#" class=" text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">{{.User.Username}}</a>
                     <p class="text-[#e0e0e0]">/</p>
@@ -66,7 +66,7 @@
                         <a href="#" hx-get="/register" hx-target="#MainView" hx-swap="outerHTML" class=" text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">Register</a>
                     {{ end }}
                 </div>
-                <img src="https://stylespektrumimages.s3.us-east-2.amazonaws.com/Long+Style+Spectrum+Logo+v1.png" alt="Style Spectrum Logo" class="w-full h-full">
+                <img src="https://stylespektrumimages.s3.us-east-2.amazonaws.com/Long+Style+Spectrum+Logo+v1.png" alt="Style Spectrum Logo" class="w-full h-full bg-opacity-0" >
             </div>
 
             <div id="MainView" hx-get="/catalog" hx-target="#MainView" hx-swap="outerHTML" hx-trigger="load"hx-swap="outerHTML">

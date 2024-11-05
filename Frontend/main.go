@@ -55,6 +55,7 @@ func main() {
 	http.HandleFunc("/catalog/", GetCatalogStyleSearch)
 	http.HandleFunc("/favorite/tag/", HandleFavoriteTag)
 	http.HandleFunc("/unfavorite/tag/", HandleUnfavoriteTag)
+	http.HandleFunc("/product/", GetProduct)
 
 	if err := http.ListenAndServe(fmt.Sprint(":", PORT), nil); err != nil {
 		fmt.Println("Error starting server:", err)
@@ -148,6 +149,14 @@ func HandleUnfavoriteTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	renderTemplate(w, "normalTag.html", pagedata)
+}
+
+func GetProduct(w http.ResponseWriter, r *http.Request) {
+	var pagedata, err = logic.GetProduct(w, r)
+	if err != nil {
+		return
+	}
+	renderTemplate(w, "product.html", pagedata)
 }
 // ----------------- Helper functions ----------------- //
 func renderTemplate(w http.ResponseWriter, templateName string, data interface{}) {
