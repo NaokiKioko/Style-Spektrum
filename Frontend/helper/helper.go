@@ -12,6 +12,7 @@ import (
 	"os"
 	"strconv"
 	"github.com/joho/godotenv"
+	"math/rand"
 )
 
 var USER_SERVICE_URL string
@@ -146,20 +147,20 @@ func ClearUsersCookies(w http.ResponseWriter) {
 }
 
 func RemoveFavoriteTagsFromAllTags(alltags []objects.Tag, favtags []objects.Tag) []objects.Tag {
+	var newAlltags []objects.Tag
+	var matched bool = false
 	for x := 0; x < len(alltags); {
-		removed := false
 		for _, favtag := range favtags {
 			if alltags[x].Name == favtag.Name {
-				alltags = append(alltags[:x], alltags[x+1:]...)
-				removed = true
-				break
+				matched = true
 			}
 		}
-		if !removed {
-			x++
+		if !matched {
+			newAlltags = append(newAlltags, alltags[x])
 		}
+		x++
 	}
-	return alltags
+	return newAlltags
 }
 
 func MakehttpGetRequest(url string, jwt string) (*http.Response, error) {
@@ -228,6 +229,12 @@ func ResponseToObj(resp *http.Response, obj interface{}) {
 	if err := json.NewDecoder(resp.Body).Decode(obj); err != nil {
 		log.Fatalf("Failed to decode response")
 	}
+}
+
+func ShuffleTags(data []objects.Tag) {
+	rand.Shuffle(len(data), func(i, j int) {
+		data[i], data[j] = data[j], data[i]
+	})
 }
 
 func SortTagsByFavoriteCount(tags []objects.Tag) []objects.Tag {

@@ -52,11 +52,12 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	}
 	alltags := []objects.Tag{}
 	helper.ResponseToObj(resp, &alltags)
-
+	helper.ShuffleTags(alltags)
 	if user.Email != "" {
 		alltags = helper.RemoveFavoriteTagsFromAllTags(alltags, user.FavoriteTags)
 	}
 	alltags = helper.SortTagsByFavoriteCount(alltags)
+	alltags = alltags[:20]
 
 	return objects.IndexInput{User: user, FavoriteTags: user.FavoriteTags, AllTags: alltags}, nil
 }
