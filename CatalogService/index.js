@@ -103,8 +103,8 @@ app.post('/report/:id', async (req, res) => {
 app.post ('/report/:itemID/tag/:tagName', async (req, res) => {
     req.body.id = req.params.itemID;
     req.body.tagName = req.params.tagName;
-    await bal.PostReportItemTag(dal, req.body);
-    res.sendStatus(201);
+    let code = await bal.PostReportItemTag(dal, req.body);
+    res.sendStatus(code);
 });
 
 app.listen(port, () => {

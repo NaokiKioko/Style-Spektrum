@@ -45,4 +45,8 @@ type LoginPageData struct {
 	Login *LoginObject
 	Error *HtmlError
 }
+type Feedback struct {
+	Title   string
+	Message string
+}
 

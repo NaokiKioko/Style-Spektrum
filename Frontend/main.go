@@ -56,6 +56,7 @@ func main() {
 	http.HandleFunc("/favorite/tag/", HandleFavoriteTag)
 	http.HandleFunc("/unfavorite/tag/", HandleUnfavoriteTag)
 	http.HandleFunc("/product/", GetProduct)
+	http.HandleFunc("/report/tag/", HandleReportTag)
 
 	if err := http.ListenAndServe(fmt.Sprint(":", PORT), nil); err != nil {
 		fmt.Println("Error starting server:", err)
@@ -158,6 +159,15 @@ func GetProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	renderTemplate(w, "product.html", pagedata)
 }
+
+func HandleReportTag(w http.ResponseWriter, r *http.Request) {
+	var pagedata, err = logic.HandleReportTag(w, r)
+	if err != nil {
+		return
+	}
+	renderTemplate(w, "feedback.html", pagedata)
+}
+
 // ----------------- Helper functions ----------------- //
 func renderTemplate(w http.ResponseWriter, templateName string, data interface{}) {
 	t, err := template.ParseFiles("templates/" + templateName)

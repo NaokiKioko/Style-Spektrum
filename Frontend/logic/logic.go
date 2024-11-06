@@ -157,3 +157,20 @@ func GetProduct(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	helper.ResponseToObj(resp, &product)
 	return product, nil
 }
+
+// /report/tag/:ID/:tagname
+func HandleReportTag(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+	var Varibles string = r.URL.Path[len("/report/tag/"):]
+	var productid, tag string = strings.Split(Varibles, "/")[0], strings.Split(Varibles, "/")[1]
+	var user, jwt, err = helper.GetUserFromCookies(r)
+	if jwt == "" {
+		helper.ClearUsersCookies(w)
+		w.Header().Set("HX-Redirect", "/")
+		return nil, errors.New("user not logged in")
+	}
+	_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid+"/tag/"+tag, "", strings.NewReader(`{"Email": "`+user.Email+`"}`))
+	if err != nil {
+		return nil, errors.New("error reporting tag")
+	}
+	return objects.Feedback{Title: "Report Complete", Message: "You Reported the "+tag+" tag for this product! With enough support this will add or remove this tag from this product!"}, nil
+}

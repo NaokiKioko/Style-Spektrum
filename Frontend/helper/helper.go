@@ -193,7 +193,7 @@ func MakehttpPostRequest(url string, jwt string, body *strings.Reader) (*http.Re
 		return nil, err
 	}
 	// Optionally, check if the response was successful
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return resp, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 	return resp, nil

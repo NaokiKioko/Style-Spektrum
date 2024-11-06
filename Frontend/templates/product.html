@@ -36,17 +36,47 @@
             </div>
 
             <!-- Product Tags -->
+            <style>
+                .tag {
+                    transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+                    position: relative;
+                }
+            
+                .tag:hover {
+                    background-color: #d1d5db; /* Darker background on hover */
+                    color: transparent; /* Hide original text color */
+                }
+            
+                .tag::after {
+                    content: attr(data-hover); /* Use the data-hover attribute for the "X" */
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 0.8rem;
+                    color: #4b5563; /* Dark gray color for the X */
+                    opacity: 0; /* Hidden by default */
+                    transition: opacity 0.2s ease;
+                }
+            
+                .tag:hover::after {
+                    opacity: 1; /* Show the "X" on hover */
+                }
+            </style>
+            
             <div class="flex flex-wrap gap-2 mb-4">
                 {{ range .Tags }}
-                    <span class="text-sm bg-gray-200 text-gray-700 rounded-full px-3 py-1">{{ . }}</span>
-                {{ end }}
+                    <span hx-post="/report/tag/{{$.ID}}/{{.}}" hx-target="#ReportMenue"  class="tag text-sm bg-gray-200 text-gray-700 rounded-full px-3 py-1" data-hover="✕">{{ . }}</span>
+                {{ end }} 
             </div>
+            
 
             <!-- Product Description -->
             <p class="text-gray-700 text-base mb-6">{{ .Description }}</p>
 
             <!-- Product URL -->
             <a href="{{ .URL }}" class="bg-[#1a1a1a] text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a] transition-all rounded-md p-2 font-semibold inline-block text-center w-full" target="_blank">View Origin</a>
+            <div id="ReportMenue" class="mt-4"></div>
         </div>
     </div>
 </div>
