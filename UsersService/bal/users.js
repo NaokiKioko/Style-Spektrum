@@ -89,7 +89,7 @@ async function GetUserByEmail(dal, email) {
     });
     let tags = [];
     if (user.favoriteTags.length > 0) {
-        await dal.interface("get", "Tags", { name: { $in: user.favoriteTags } }).then((tag) => {
+        await dal.interface("get", "Tags", { Name: { $in: user.favoriteTags } }).then((tag) => {
             tags = tag;
         });
     }
