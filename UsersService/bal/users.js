@@ -10,6 +10,7 @@ async function registerUser(dal, email, password) {
         // register user
         password = security.hashPassword(password);
         try {
+            email = email.toLowerCase();
             await dal.interface("post", "Users", { email, password, role: "user", favoriteTags: []}).then((code) => {
                 endcode = code;
             });
@@ -27,6 +28,7 @@ async function login(dal, email, password) {
     // login user
     let jwt = null;
     let endcode = null;
+    email = email.toLowerCase();
     await dal.interface("get", "Users", { email }).then((users) => {
         if (users.length === 0) {
             endcode = 404;
