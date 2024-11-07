@@ -57,7 +57,9 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 		alltags = helper.RemoveFavoriteTagsFromAllTags(alltags, user.FavoriteTags)
 	}
 	alltags = helper.SortTagsByFavoriteCount(alltags)
-	alltags = alltags[:20]
+	if len(alltags) > 20 {
+		alltags = alltags[:20]
+	}
 
 	return objects.IndexInput{User: user, FavoriteTags: user.FavoriteTags, AllTags: alltags}, nil
 }

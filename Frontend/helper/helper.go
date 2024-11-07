@@ -147,20 +147,19 @@ func ClearUsersCookies(w http.ResponseWriter) {
 }
 
 func RemoveFavoriteTagsFromAllTags(alltags []objects.Tag, favtags []objects.Tag) []objects.Tag {
-	var newAlltags []objects.Tag
-	var matched bool = false
-	for x := 0; x < len(alltags); {
-		for _, favtag := range favtags {
-			if alltags[x].Name == favtag.Name {
-				matched = true
-			}
-		}
-		if !matched {
-			newAlltags = append(newAlltags, alltags[x])
-		}
-		x++
+	tagMap := make(map[string]bool)
+	for _, favtag := range favtags {
+		tagMap[favtag.Name] = true
 	}
-	return newAlltags
+
+	filteredTags := alltags[:0]
+	for _, tag := range alltags {
+		if !tagMap[tag.Name] {
+			filteredTags = append(filteredTags, tag)
+		}
+	}
+
+	return filteredTags
 }
 
 func MakehttpGetRequest(url string, jwt string) (*http.Response, error) {
