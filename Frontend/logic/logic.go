@@ -1,20 +1,22 @@
 package logic
 
 import (
+	"errors"
 	"log"
 	"main/helper"
 	"main/objects"
 	"net/http"
-	"errors"
 	"os"
 	"strconv"
 	"strings"
+
 	"github.com/joho/godotenv"
 )
 
 var USER_SERVICE_URL string
 var CATALOG_SERVICE_URL string
 var JWTTIMEOUT int
+
 func init() {
 	err := godotenv.Load("../.env")
 	if err != nil {
@@ -66,7 +68,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) (string, interface{}, error) {
 	if r.Method != http.MethodPost {
-		
+
 		return "", nil, errors.New("method not allowed")
 	}
 	email := r.FormValue("email")
@@ -175,5 +177,70 @@ func HandleReportTag(w http.ResponseWriter, r *http.Request) (interface{}, error
 	if err != nil {
 		return nil, errors.New("error reporting tag")
 	}
-	return objects.Feedback{Title: "Report Complete", Message: "You Reported the "+tag+" tag for this product! With enough support this will add or remove this tag from this product!"}, nil
+	return objects.Feedback{Title: "Report Complete", Message: "You Reported the " + tag + " tag for this product! With enough support this will add or remove this tag from this product!"}, nil
+}
+
+func GetReport(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+	var Varibles string = r.URL.Path[len("/report/field/"):]
+	var productid, field string = strings.Split(Varibles, "/")[0], strings.Split(Varibles, "/")[1]
+	resp, err := helper.MakehttpGetRequest(CATALOG_SERVICE_URL+"/report/"+productid+"/"+field, "")
+	if err != nil {
+		return nil, errors.New("error getting report from catalog service")
+	}
+	defer resp.Body.Close()
+	var reports []objects.Report
+	helper.ResponseToObj(resp, &reports)
+	if field == "Tag" {
+		resp, err = helper.MakehttpGetRequest(CATALOG_SERVICE_URL+"/tags", "")
+		if err != nil {
+			return nil, errors.New("error getting tags from catalog service")
+		}
+		var allTags []objects.Tag
+		helper.ResponseToObj(resp, &allTags)
+		var tagsReported []objects.Tag
+		for _, report := range reports {
+			tagsReported = append(tagsReported, objects.Tag{Name: report.TagName, FavoriteCount: 0})
+		}
+		helper.RemoveFavoriteTagsFromAllTags(allTags, tagsReported)
+		for _, tag := range allTags {
+			reports = append(reports, objects.Report{TagName: tag.Name, Popularity: 0, ReporterEmail: []string{}})
+		}
+	}
+	var pageData objects.ReportPageData = objects.ReportPageData{ID: productid, Field: field, Options: reports}
+	return pageData, nil
+}
+
+//report/field/:ID/:field
+func HandleReport(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+	if r.Method != http.MethodPost {
+		return nil, errors.New("method not allowed")
+	}
+	var Varibles string = r.URL.Path[len("/report/field/"):]
+	var productid, field string = strings.Split(Varibles, "/")[0], strings.Split(Varibles, "/")[1]
+	var _, jwt, err = helper.GetUserFromCookies(r)
+	if err != nil {
+		helper.ClearUsersCookies(w)
+		w.Header().Set("HX-Redirect", "/")
+		return nil, errors.New("user not logged in")
+	}
+	resp, err := helper.MakehttpGetRequest(USER_SERVICE_URL+"/me", jwt)
+	if err != nil {
+		helper.ClearUsersCookies(w)
+		w.Header().Set("HX-Redirect", "/")
+		return nil, errors.New("user not logged in")
+	}
+	var user objects.User
+	helper.ResponseToObj(resp, &user)
+	newContent := r.FormValue("newcontent")
+	if field == "Tag" {
+		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid+"/tag/"+newContent, "", strings.NewReader(`{"Email": "`+user.Email+`"}`))
+	} else if field == "Price" || field == "Rating" {
+		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid, "", strings.NewReader(`{"Email": "`+user.Email+`, "Field": "`+field+`, NewContent":`+newContent+`}`))
+	} else {
+		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid, "", strings.NewReader(`{"Email": "`+user.Email+`, "Field": "`+field+`, NewContent":"`+newContent+`"}`))
+	}
+	if err != nil {
+		return nil, errors.New("error reporting field")
+	}
+	return objects.Feedback{Title: "Report Succsessful", Message: "Your report has been prosessed"}, nil
 }

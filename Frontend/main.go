@@ -57,6 +57,7 @@ func main() {
 	http.HandleFunc("/unfavorite/tag/", HandleUnfavoriteTag)
 	http.HandleFunc("/product/", GetProduct)
 	http.HandleFunc("/report/tag/", HandleReportTag)
+	http.HandleFunc("/report/field/", GetReport) // usually/report/:id/:field 
 
 	if err := http.ListenAndServe(fmt.Sprint(":", PORT), nil); err != nil {
 		fmt.Println("Error starting server:", err)
@@ -166,6 +167,22 @@ func HandleReportTag(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	renderTemplate(w, "feedback.html", pagedata)
+}
+
+func GetReport(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		var pagedata, err = logic.GetReport(w, r)
+		if err != nil {
+			return
+		}
+		renderTemplate(w, "report.html", pagedata)
+	} else if r.Method == http.MethodPost {
+		var pagedata, err = logic.HandleReport(w, r)
+		if err != nil {
+			return
+		}
+		renderTemplate(w, "feedback.html", pagedata)
+	}
 }
 
 // ----------------- Helper functions ----------------- //

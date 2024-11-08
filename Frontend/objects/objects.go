@@ -49,4 +49,16 @@ type Feedback struct {
 	Title   string
 	Message string
 }
-
+type Report struct {
+	ReportedID    string
+	NewContent    interface{}
+	TagName       string
+	Popularity    int
+	ReporterEmail []string
+}
+type ReportPageData struct {
+	ID      string
+	Field   string
+	Options []Report
+	URL     string
+}

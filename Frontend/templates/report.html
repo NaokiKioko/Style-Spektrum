@@ -1,0 +1,32 @@
+<div id="ReportMenue" class="fixed bottom-4 right-4 w-3/5">
+    <div class="col-span-3 bg-[#1a1a1a] text-[#e0e0e0] rounded-lg shadow-lg p-6">
+        <h1 class="text-4xl font-semibold text-center text-[#e0e0e0] mb-6">Report the {{.Field}}</h1>
+        <!-- Dropdown for selecting options -->
+        <label for="userOptions" class="block text-lg font-medium text-[#e0e0e0] mb-2">Select an option:</label>
+        <select id="userOptions" class="w-full p-2 rounded-lg bg-[#333] text-[#e0e0e0] border border-gray-700">
+            {{range .Options}}
+            <option value="{{.NewContent}}">
+                {{if gt (len .NewContent) 30}}
+                Votes ({{.Popularity}}) {{printf "%.30s" .NewContent}}... 
+                {{else}}
+                Votes ({{.Popularity}}) {{.NewContent}} 
+                {{end}}
+            </option>
+            {{end}}
+        </select>
+        <form id="reportForm" class="flex flex-col space-y-4">
+            <label for="reportMessage" class="block text-lg font-medium text-[#e0e0e0] mt-4 mb-2">What should be here Instead?</label>
+            <textarea id="reportMessage" name="NewContent" class="w-full p-2 max-h-96 rounded-lg bg-[#333] text-[#e0e0e0] border border-gray-700" placeholder="(Leave blank if unsure)"></textarea> 
+            <div class="flex justify-between mt-4">
+                <a hx-on:click="DeleteElement('ReportMenue')" class="bg-[#1a1a1a] text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a] transition-all rounded-md p-2 font-semibold inline-block text-center w-full">Cancel</a>
+                <button id="submit" hx-post="/report/{{.ID}}/{{.Field}}" hx-target="#ReportMenue" hx-swap="outerHTML" class="bg-[#1a1a1a] text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a] transition-all rounded-md p-2 font-semibold inline-block text-center w-full">Report</button>
+            </div>
+        </form>
+    </div>
+    <script>
+        document.getElementById('userOptions').addEventListener('change', function() {
+            const selectedValue = this.value;
+            document.getElementById('reportMessage').value = selectedValue;
+        });
+    </script>
+</div>

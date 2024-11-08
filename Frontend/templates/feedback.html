@@ -1,5 +1,4 @@
-<div id="fadeDiv" class="transition-opacity ease-out duration-700 opacity-100">
-    <br><br><br><br>
+<div id="fadeDiv" class="transition-opacity ease-out duration-700 opacity-100 fixed bottom-4 right-4">
     <div class="col-span-3 bg-[#1a1a1a] text-[#e0e0e0] rounded-lg shadow-lg p-6">
         <h1 class="text-4xl font-semibold text-center text-[#e0e0e0] mb-6">{{.Title}}</h1>
         <p>{{ .Message }}</p>
@@ -16,7 +15,7 @@
             if (fadeDiv) {
                 setTimeout(() => {
                     fadeDiv.classList.add('opacity-0');
-                }, 11000); // Delay before starting the fade-out
+                }, 6000); // Delay before starting the fade-out
     
                 fadeDiv.addEventListener('transitionend', handleTransitionEnd, { once: true });
             }
