@@ -58,10 +58,6 @@ async function PostTags(dal, tagNames) {
     }
 }
 
-async function GetReportField(dal, id, field) {
-    return await dal.interface("get", "Reports", { "ReportedID": id, "Field": field });
-}
-
 class Report {
     constructor(ReportedID, Field, NewContent, ReporterEmail) {
         this.ReportedID = ReportedID;
@@ -75,6 +71,9 @@ async function PostReport(dal, report) {
     let create = true;
     let code = 201;
     let newReport = new Report(report.id, report.Field, report.NewContent, report.Email);
+    if (report.Field != "Price" || report.Field != "Description", report.Field != "Name", report.Field != "Rating", report.Field != "URL") {
+        return 400;
+    }
     let product = await dal.interface("get", "Catalog", { _id: ObjectId.createFromHexString(newReport.ReportedID) });
     if (product === 500) {
         return 500;
@@ -162,7 +161,7 @@ async function EnactReports(dal, ReportedID, Field, TagName, NewContent) {
                 tags.splice(index, 1);
             }
             await dal.interface("patch", "Catalog", [{ _id: ObjectId.createFromHexString(ReportedID) }, { Tags: tags }]);
-            await DeleteReports(dal, ReportedID, Field);
+            await DeleteReport(dal, report._id);
         }
     } else {
         let reports = await dal.interface("get", "Reports", { "ReportedID": ReportedID, "Field": Field, "NewContent": NewContent });
@@ -190,6 +189,16 @@ async function DeleteReports(dal, ReportedID, Field) {
 
 async function GetReports(dal, id) {
     return await dal.interface("get", "Reports", {ReportedID: id});
+}
+
+async function DeleteReport(dal, id) {
+    let reports = await dal.interface("get", "Reports", { _id: ObjectId.createFromHexString(id)});
+    if (reports === 500) {
+        return 500;
+    }
+    for (let i = 0; i < reports.length; i++) {
+        await dal.interface("delete", "Reports", { _id: reports[i]._id });
+    }
 }
 
 module.exports = {
