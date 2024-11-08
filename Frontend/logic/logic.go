@@ -183,7 +183,7 @@ func HandleReportTag(w http.ResponseWriter, r *http.Request) (interface{}, error
 func GetReport(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	var Varibles string = r.URL.Path[len("/report/field/"):]
 	var productid, field string = strings.Split(Varibles, "/")[0], strings.Split(Varibles, "/")[1]
-	resp, err := helper.MakehttpGetRequest(CATALOG_SERVICE_URL+"/report/"+productid+"/"+field, "")
+	resp, err := helper.MakehttpGetRequest(CATALOG_SERVICE_URL+"/report/"+productid+"/field/"+field, "")
 	if err != nil {
 		return nil, errors.New("error getting report from catalog service")
 	}

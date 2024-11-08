@@ -94,11 +94,29 @@ app.get('/report/:id', async (req, res) => {
     res.status(200).send(reports[0]);
 });
 
+app.get('/report/:id/field/:field', async (req, res) => {
+    let id = req.params.id;
+    let field = req.params.field;
+    const reports = await bal.GetReportField(dal, id, field);
+    if (reports.length === 0) {
+        res.status(404).send('Report not found');
+        return;
+    }
+    if (reports === 500) {
+        res.status(500).send('Error getting report');
+        return;
+    }
+    res.status(200).send(reports[0]);
+});
+
 app.post('/report/:id', async (req, res) => {
     req.body.id = req.params.id;
     await bal.PostReport(dal, req.body);
     res.sendStatus(201);
 });
+
+
+
 
 app.post ('/report/:itemID/tag/:tagName', async (req, res) => {
     req.body.id = req.params.itemID;
