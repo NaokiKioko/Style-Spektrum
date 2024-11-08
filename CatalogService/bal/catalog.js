@@ -58,6 +58,10 @@ async function PostTags(dal, tagNames) {
     }
 }
 
+async function GetReportField(dal, id, field) {
+    return await dal.interface("get", "Reports", { "ReportedID": id, "Field": field });
+}
+
 class Report {
     constructor(ReportedID, Field, NewContent, ReporterEmail) {
         this.ReportedID = ReportedID;
