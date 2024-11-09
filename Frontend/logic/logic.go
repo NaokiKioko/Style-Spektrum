@@ -164,6 +164,11 @@ func GetProduct(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 }
 
 func GetReport(w http.ResponseWriter, r *http.Request) (interface{}, error) {
+	_, _, err := helper.GetUserFromCookies(r)
+	if err != nil {
+		helper.ClearUsersCookies(w)
+		return objects.Feedback{Title: "Please log in", Message: "You need an account for this feature"}, errors.New("user not logged in")
+	} 
 	var Varibles string = r.URL.Path[len("/report/field/"):]
 	var productid, field string = strings.Split(Varibles, "/")[0], strings.Split(Varibles, "/")[1]
 	resp, err := helper.MakehttpGetRequest(CATALOG_SERVICE_URL+"/report/"+productid+"/field/"+field, "")
@@ -171,7 +176,10 @@ func GetReport(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 		return nil, errors.New("error getting reports from catalog service")
 	}
 	reports := []objects.Report{}
-	helper.ResponseToObj(resp, &reports)
+	if resp.StatusCode != http.StatusNotFound {
+		helper.ResponseToObj(resp, &reports)
+	}
+
 	if field == "Tag" {
 		reportedtags := []objects.Tag{}
 		for _, report := range reports {

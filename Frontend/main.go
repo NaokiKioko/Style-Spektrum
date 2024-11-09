@@ -5,12 +5,13 @@ import (
 	"html/template"
 	"log"
 	"main/helper"
+	"main/logic"
 	"main/objects"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"main/logic"
+
 	"github.com/joho/godotenv"
 )
 
@@ -155,18 +156,21 @@ func HandleUnfavoriteTag(w http.ResponseWriter, r *http.Request) {
 func GetProduct(w http.ResponseWriter, r *http.Request) {
 	var pagedata, err = logic.GetProduct(w, r)
 	if err != nil {
-		return
+		renderTemplate(w, "feedback.html", pagedata)
+	} else {
+		renderTemplate(w, "product.html", pagedata)
 	}
-	renderTemplate(w, "product.html", pagedata)
 }
 
 func GetReport(w http.ResponseWriter, r *http.Request) {
-	if (r.Method == http.MethodGet) {
+	if r.Method == http.MethodGet {
 		var pagedata, err = logic.GetReport(w, r)
 		if err != nil {
+			renderTemplate(w, "feedback.html", pagedata)
 			return
+		} else {
+			renderTemplate(w, "report.html", pagedata)
 		}
-		renderTemplate(w, "report.html", pagedata)
 	} else if r.Method == http.MethodPost {
 		var pagedata, err = logic.HandleReport(w, r)
 		if err != nil {
