@@ -136,11 +136,11 @@ async function DeleteReport(dal, id) {
 }
 
 async function GetReports(dal, id) {
-    return await dal.interface("get", "Reports", { ReportedID: id });
+    return await dal.interface("get", "Reports", { "ReportedID": id });
 }
 
-async function GetReportsByFeild(dal, id, feild) {
-    return await dal.interface("get", "Reports", { ReportedID: id, Field: feild });
+async function GetReportsByField(dal, id, field) {
+    return await dal.interface("get", "Reports", { "ReportedID": id, "Field": field, });
 }
 
 async function DeleteReport(dal, id) {
@@ -167,5 +167,5 @@ module.exports = {
     GetTags,
     PostReport,
     GetReports,
-    GetReportsByFeild
+    GetReportsByField
 }
