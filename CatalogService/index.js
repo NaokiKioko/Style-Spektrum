@@ -106,7 +106,7 @@ app.get('/report/:id/field/:field', async (req, res) => {
         res.status(500).send('Error getting report');
         return;
     }
-    res.status(200).send(reports[0]);
+    res.status(200).send(reports);
 });
 
 app.post('/report/:id/field/:field', async (req, res) => {
