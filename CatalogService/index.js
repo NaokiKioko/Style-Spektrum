@@ -97,7 +97,7 @@ app.get('/report/:id', async (req, res) => {
 app.get('/report/:id/field/:field', async (req, res) => {
     let id = req.params.id;
     let field = req.params.field;
-    const reports = await bal.GetReportsByFeild(dal, id, field);
+    let reports = await bal.GetReportsByField(dal, id, field);
     if (reports.length === 0) {
         res.status(404).send('Report not found');
         return;
