@@ -180,7 +180,7 @@ func GetReport(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 		helper.ResponseToObj(resp, &reports)
 	}
 
-	if field == "Tag" {
+	if field == "Tags" {
 		reportedtags := []objects.Tag{}
 		for _, report := range reports {
 			reportedtags = append(reportedtags, objects.Tag{Name: report.NewContent.(string), FavoriteCount: report.Popularity})
@@ -191,6 +191,7 @@ func GetReport(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 		}
 		alltags := []objects.Tag{}
 		helper.ResponseToObj(resp, &alltags)
+		alltags = helper.SortTagsByFavoriteCount(alltags)
 		helper.RemoveFavoriteTagsFromAllTags(alltags, reportedtags)
 		for _, tag := range alltags {
 			reports = append(reports, objects.Report{NewContent: tag.Name, Popularity: 0, ReportedID: productid})
@@ -267,7 +268,7 @@ func HandleReport(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	if field == "Price" || field == "Rating" {
 		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid+"/field/"+field, "", strings.NewReader(`{"Email": "`+user.Email+`", "NewContent":`+newContent+`}`))
 	} else {
-		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid+"/field/"+field, "", strings.NewReader(`{"Email": "`+user.Email+`", NewContent":"`+newContent+`"}`))
+		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid+"/field/"+field, "", strings.NewReader(`{"Email": "`+user.Email+`","NewContent":"`+newContent+`"}`))
 	}
 	if err != nil {
 		return nil, errors.New("error reporting field")

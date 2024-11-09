@@ -33,10 +33,10 @@
             <p class="text-xl text-green-600 font-semibold mb-4">{{ printf "$%.2f" .Price }}</p>
 
             <!-- Product Rating -->
+            <a hx-get="/report/field/{{.ID}}/Rating" hx-target="#AdditinalBox" hx-trigger="click" class="underline text-right w-full" >Report Rating</a>
             <div class="flex items-center mb-4">
                 <span class="text-yellow-400 font-semibold text-lg">{{ printf "%.1f" .Rating }} ★</span>
             </div>
-            <a hx-get="/report/field/{{.ID}}/Rating" hx-target="#AdditinalBox" hx-trigger="click" class="underline text-right w-full" >Report Rating</a>
 
             <!-- Product Tags -->
             <style>
@@ -69,9 +69,12 @@
             
             <div class="flex flex-wrap gap-2 mb-4">
                 {{ range .Tags }}
-                    <span hx-post="/report/tag/{{$.ID}}/Tags" hx-include="[newcontent={{.}}]" hx-target="#AdditinalBox" class="tag text-sm bg-gray-200 text-gray-700 rounded-full px-3 py-1" data-hover="✕">{{ . }}</span>
-                    {{ end }} 
-                    <span hx-get="/report/tag/{{$.ID}}/Tags" hx-target="#AdditinalBox"  class="tag text-sm bg-gray-200 text-gray-700 rounded-full px-3 py-1" data-hover="＋">＋</span>
+                <span hx-post="/report/field/{{$.ID}}/Tags" hx-vals='{"newcontent": "{{.}}"}' hx-target="#AdditinalBox" class="tag text-sm bg-gray-200 text-gray-700 rounded-full px-3 py-1" data-hover="✕">
+                    {{ . }}
+                </span>
+                
+                {{ end }} 
+                    <span hx-get="/report/field/{{$.ID}}/Tags" hx-target="#AdditinalBox"  class="tag text-sm bg-gray-200 text-gray-700 rounded-full px-3 py-1" data-hover="＋">＋</span>
             </div>
             
 

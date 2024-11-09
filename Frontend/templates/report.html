@@ -1,26 +1,40 @@
 <div id="ReportMenue" class="fixed bottom-4 right-4 w-2/5">
     <div class="col-span-3 bg-[#1a1a1a] text-[#e0e0e0] rounded-lg shadow-lg p-6">
-        <h1 class="text-4xl font-semibold text-center text-[#e0e0e0] mb-6">Report the {{.Field}}</h1>
+        {{if eq .Field "Tags"}}
+            <h1 class="text-4xl font-semibold text-center text-[#e0e0e0] mb-6">Add or Report {{.Field}}</h1>
+        {{else if eq .Field "Images"}}
+            <h1 class="text-4xl font-semibold text-center text-[#e0e0e0] mb-6">Report {{.Field}}</h1>
+        {{else}}
+            <h1 class="text-4xl font-semibold text-center text-[#e0e0e0] mb-6">Report and Change the {{.Field}}</h1>
+        {{end}}
         <!-- Dropdown for selecting options -->
+        {{if eq .Field "Tags"}}
+            <label for="userOptions" class="block text-lg font-medium text-[#e0e0e0] mb-2">Heres some options:</label>
+            {{else if eq .Field "Images"}}
+            <label for="userOptions" class="block text-lg font-medium text-[#e0e0e0] mb-2">What doesnt belong:</label>
+        {{else}}
         <label for="userOptions" class="block text-lg font-medium text-[#e0e0e0] mb-2">Heres what others think:</label>
+        {{end}}
         <select id="userOptions" class="w-full p-2 rounded-lg bg-[#333] text-[#e0e0e0] border border-gray-700">
             {{range .Options}}
                 <option value="{{.NewContent}}">
-                    {{if gt (len .NewContent) 30}}
-                    Votes ({{.Popularity}})\t{{printf "%.30s" .NewContent}}... 
+                    {{if or (eq $.Field "Price") (eq $.Field "Rating") (eq $.Field "Images")}}
+                        Votes ({{.Popularity}}) {{.NewContent}}
                     {{else}}
-                    Votes ({{.Popularity}})\t{{.NewContent}} 
+                        {{if gt (len .NewContent) 30}}
+                            Votes ({{.Popularity}}) {{printf "%.30s" .NewContent}}...
+                        {{else}}
+                            Votes ({{.Popularity}}) {{.NewContent}}
+                        {{end}}
                     {{end}}
                 </option>
             {{end}}
         </select>
         <form id="reportForm" hx-post="/report/field/{{.ID}}/{{.Field}}" hx-target="#ReportMenue" class="flex flex-col space-y-4">
-            <label for="reportMessage" class="block text-lg font-medium text-[#e0e0e0] mt-4 mb-2">What should be here Instead?</label>
-            {{if .Field | eq "Images"}}
-                <textarea id="reportMessage" name="newcontent" class="w-full p-2 max-h-96 rounded-lg bg-[#333] text-[#e0e0e0] border border-gray-700" placeholder="(Leave blank to remove fully)" readonly></textarea> 
-            {{else if .Field | eq "Tags"}}
-                <textarea id="reportMessage" name="newcontent" class="w-full p-2 max-h-96 rounded-lg bg-[#333] text-[#e0e0e0] border border-gray-700" placeholder="(Leave blank to remove fully)" readonly></textarea> 
+            {{if or (eq .Field "Images") (eq .Field "Tags")}}
+                <textarea id="reportMessage" name="newcontent" class="w-full p-2 max-h-1 rounded-lg bg-[#333] text-[#e0e0e0] border border-gray-700 collapse" placeholder="(Leave blank to remove fully)" readonly></textarea> 
             {{else}}
+                <label for="reportMessage" class="block text-lg font-medium text-[#e0e0e0] mt-4 mb-2">What should be here Instead?</label>
                 {{if .Field | eq "Price"}}
                     <input type="number" step="0.01" id="reportMessage" name="newcontent" class="w-full p-2 max-h-96 rounded-lg bg-[#333] text-[#e0e0e0] border border-gray-700" placeholder="(Leave blank to remove fully)"></input> 
                 {{else if .Field | eq "Rating"}}
@@ -36,6 +50,7 @@
         </form>
     </div>
     <script>
+        document.getElementById('reportMessage').value = document.getElementById('userOptions').value;
         document.getElementById('userOptions').addEventListener('change', function() {
             const selectedValue = this.value;
             document.getElementById('reportMessage').value = selectedValue;
