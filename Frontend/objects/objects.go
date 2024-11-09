@@ -50,6 +50,7 @@ type Feedback struct {
 	Message string
 }
 type Report struct {
+	ID 		  string `json:"_id"`
 	ReportedID    string
 	NewContent    interface{}
 	Popularity    int

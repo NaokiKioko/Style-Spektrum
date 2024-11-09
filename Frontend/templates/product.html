@@ -29,8 +29,8 @@
             <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ .Name }}</h1>
 
             <!-- Product Price -->
-            <p class="text-xl text-green-600 font-semibold mb-4">{{ printf "$%.2f" .Price }}</p>
             <a hx-get="/report/field/{{.ID}}/Price" hx-target="#AdditinalBox" hx-trigger="click" class="underline text-right w-full" >Report Price</a>
+            <p class="text-xl text-green-600 font-semibold mb-4">{{ printf "$%.2f" .Price }}</p>
 
             <!-- Product Rating -->
             <div class="flex items-center mb-4">

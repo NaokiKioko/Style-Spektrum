@@ -265,9 +265,9 @@ func HandleReport(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	// make the report
 	// if feild is number make sure no " " is in the newContent body
 	if field == "Price" || field == "Rating" {
-		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid, "", strings.NewReader(`{"Email": "`+user.Email+`, NewContent":`+newContent+`}`))
+		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid+"/field/"+field, "", strings.NewReader(`{"Email": "`+user.Email+`", "NewContent":`+newContent+`}`))
 	} else {
-		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid, "", strings.NewReader(`{"Email": "`+user.Email+`, NewContent":"`+newContent+`"}`))
+		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid+"/field/"+field, "", strings.NewReader(`{"Email": "`+user.Email+`", NewContent":"`+newContent+`"}`))
 	}
 	if err != nil {
 		return nil, errors.New("error reporting field")
