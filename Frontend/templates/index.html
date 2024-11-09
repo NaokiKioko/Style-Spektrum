@@ -5,34 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://unpkg.com/htmx.org@2.0.3"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="..\dist\output.css">
     <title>Style Spektrum</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body id="PageBody" class="bg-white text-black">
+<body id="PageBody">
     <!-- Main Layout with Sidebar and Content -->
     <div class="flex h-full">
     <!-- Sidebar for Styles -->
         <aside class="bg-[#1a1a1a] h-screen pr-4 overflow-auto w-1/10 max-h-full" style="overflow-y: auto; scrollbar-width: thin; scrollbar-color: transparent transparent;">
             <h2 class="text-xl text-white font-semibold text-center my-2">ALL Styles</h2>
             <ul class="bg-white text-black ">
-                    <li id="AlltagsLI" hx-get="/catalog" hx-target="#MainView" hx-on:click="SelectElement('AlltagsLI')" class="flex justify-center outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
+                    <li id="AlltagsLI" hx-get="/catalog" hx-target="#MainView" hx-swap="outerHTML" hx-on:click="SelectElement('AlltagsLI')" class="flex justify-center outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0] rounded-md">
                         <a href="#" class="block px-4 py-2 rounded-md">ALL</a>
                     </li>
             </ul>
             <h2 class="text-xl text-[#e0e0e0] text-center font-semibold my-2">Your Styles</h2>
-            <ul id="FavoriteTagsList" class="bg-[#e0e0e0] text-[#1a1a1a]">
+            <ul id="FavoriteTagsList" class="bg-[#e0e0e0] text-[#1a1a1a] ">
             {{if .User.FavoriteTags}}
                     {{range .FavoriteTags}}
-                        <li id="{{.Name}}FavoriteLI" class="flex justify-end items-center outline bg-[#e0e0e0] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
-                            <p hx-get="/catalog/{{.Name}}" hx-trigger="click" hx-target="#MainView" hx-on:click="SelectElement('{{.Name}}FavoriteLI')" class="flex-grow block px-4 py-2 rounded-md">{{.Name}}</p>
+                        <li id="{{.Name}}FavoriteLI" class="flex justify-end items-center outline bg-[#e0e0e0] hover:bg-[#1a1a1a] hover:text-[#e0e0e0] rounded-md">
+                            <p hx-get="/catalog/{{.Name}}" hx-trigger="click" hx-target="#MainView" hx-swap="outerHTML" hx-on:click="SelectElement('{{.Name}}FavoriteLI')" class="flex-grow block px-4 py-2 rounded-md">{{.Name}}</p>
                             {{ if $.User.Username}}
                                 <p hx-get="/unfavorite/tag/{{.Name}}" hx-trigger="click" hx-target="#NormalTagsList" hx-swap="beforeend" hx-on::after-request="DeleteElement('{{.Name}}FavoriteLI')"  class="ml-2 pr-2 cursor-pointer text-[#1a1a1a] hover:text-yellow-500 inline-block" style="font-size: 150%">★</p>
                             {{end}}
                         </li>
                     {{end}}
             {{else}}
-                <li id="NoElementsFavoriteLI" class="flex items-center justify-center outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
+                <li id="NoElementsFavoriteLI" class="flex items-center justify-center outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0] rounded-md">
                     <p href="#" class="block px-4 py-2 rounded-md">No Favs Styles</p>
                 </li>
             {{end}}
@@ -40,8 +39,8 @@
             <h2 class="text-xl text-white font-semibold text-center my-2">Popular Styles</h2>
             <ul id="NormalTagsList" class="bg-white text-black ">
                 {{range .AllTags}}
-                    <li id="{{.Name}}NormalLI" class="flex justify-end outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]">
-                        <p hx-get="/catalog/{{.Name}}" hx-trigger="click" hx-target="#MainView" hx-on:click="SelectElement('{{.Name}}NormalLI')" class="flex-grow block px-4 py-2 rounded-md">{{.Name}}</p>
+                    <li id="{{.Name}}NormalLI" class="flex justify-end outline bg-[#e0e0e0] text-[#1a1a1a] hover:bg-[#1a1a1a] hover:text-[#e0e0e0] rounded-md">
+                        <p hx-get="/catalog/{{.Name}}" hx-trigger="click" hx-target="#MainView" hx-swap="outerHTML" hx-on:click="SelectElement('{{.Name}}NormalLI')" class="flex-grow block px-4 py-2 rounded-md">{{.Name}}</p>
                         {{ if $.User.Username}}
                             <p hx-get="/favorite/tag/{{.Name}}" hx-trigger="click" hx-target="#FavoriteTagsList" hx-swap="beforeend" hx-on::after-request="DeleteElement('{{.Name}}NormalLI')"  class="ml-2 pr-2 cursor-pointer text-[#1a1a1a] hover:text-yellow-500 inline-block" style="font-size: 150%">☆</p>
                         {{end}}
@@ -54,22 +53,22 @@
         <!-- Main Content Area -->
         <main class="flex-1">
             <!-- Logo as Image -->
-            <div class="justify-center">
-                <div class="flex justify-end bg-[#1a1a1a] space-x-4 back tp-1">
+            <div class="justify-center bg-transparent">
+                <div class="flex justify-end bg-[#1a1a1a] space-x-4 back tp-1 bg-opacity-100 ">
                     {{ if .User.Username}}
                     <a href="#" class=" text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">{{.User.Username}}</a>
                     <p class="text-[#e0e0e0]">/</p>
                     <a href="#" hx-get="/logout" class="text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">Logout</a>
                     {{ else }}
-                        <a href="#" hx-get="/login" hx-target="#MainView" class="text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">LOGIN</a>
+                        <a href="#" hx-get="/login" hx-target="#MainView" hx-swap="outerHTML" class="text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">Login</a>
                         <p class="text-[#e0e0e0]">/</p>
-                        <a href="#" hx-get="/register" hx-target="#MainView" class=" text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">REGISTER</a>
+                        <a href="#" hx-get="/register" hx-target="#MainView" hx-swap="outerHTML" class=" text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a]">Register</a>
                     {{ end }}
                 </div>
-                <img src="https://stylespektrumimages.s3.us-east-2.amazonaws.com/Long+Style+Spectrum+Logo+v1.png" alt="Style Spectrum Logo" class="w-full h-full">
+                <img src="https://stylespektrumimages.s3.us-east-2.amazonaws.com/Long+Style+Spectrum+Logo+v1.png" alt="Style Spectrum Logo" class="w-full h-full bg-opacity-0" >
             </div>
 
-            <div id="MainView" hx-get="/catalog" hx-target="#MainView" hx-trigger="load" class="grid grid-cols-5 gap-6 overflow-auto" style="overflow-y: auto; scrollbar-width: thin; scrollbar-color: transparent transparent;">>
+            <div id="MainView" hx-get="/catalog" hx-target="#MainView" hx-swap="outerHTML" hx-trigger="load"hx-swap="outerHTML">
             </div>
         </main>
     </div>

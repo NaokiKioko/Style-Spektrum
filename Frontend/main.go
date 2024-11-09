@@ -1,72 +1,30 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
+	"main/helper"
+	"main/logic"
+	"main/objects"
 	"net/http"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/joho/godotenv"
 )
 
-type Tag struct {
-	Name          string
-	FavoriteCount int
-}
-type User struct {
-	Username     string
-	Email        string
-	FavoriteTags []Tag
-	Role         string
-}
-type LoginObject struct {
-	Email    string
-	Password string
-}
-type JWTObject struct {
-	Token string
-}
-type Product struct {
-	ID          string
-	Name        string
-	Price       float64
-	Tags        []string
-	Images      []string
-	Description string
-	Rating      float64
-	URL         string
-}
-type IndexInput struct {
-	User         User
-	FavoriteTags []Tag
-	AllTags      []Tag
-}
-type HtmlError struct {
-	Message    string
-	StatusCode int
-	Error      bool
-}
-type CatalogPageData struct {
-	Products []Product
-	Error    *HtmlError
-}
-type LoginPageData struct {
-	Login *LoginObject
-	Error *HtmlError
-}
+// ----------------- Object Structs ----------------- //
 
+// ----------------- Varibles ----------------- //
 var USER_SERVICE_URL string
 var CATALOG_SERVICE_URL string
 var JWTTIMEOUT int
 
 const PORT = "8081"
 
+// ----------------- Setup functions ----------------- //
 func init() {
 	err := godotenv.Load("../.env")
 	if err != nil {
@@ -98,38 +56,20 @@ func main() {
 	http.HandleFunc("/catalog/", GetCatalogStyleSearch)
 	http.HandleFunc("/favorite/tag/", HandleFavoriteTag)
 	http.HandleFunc("/unfavorite/tag/", HandleUnfavoriteTag)
+	http.HandleFunc("/product/", GetProduct)
+	http.HandleFunc("/report/field/", GetReport) // usually /report/field/:id/:field
 
 	if err := http.ListenAndServe(fmt.Sprint(":", PORT), nil); err != nil {
 		fmt.Println("Error starting server:", err)
 	}
 }
 
+// ----------------- Endpoint functions ----------------- //
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	var user, jwt, err = GetUserFromCookies(r)
+	indexInput, err := logic.IndexHandler(w, r)
 	if err != nil {
-		user = User{}
-	} else if jwt == "" {
-		ClearUsersCookies(w)
-		w.Header().Set("HX-Redirect", "/")
 		return
 	}
-	if len(user.FavoriteTags) <= 0 {
-		user.FavoriteTags = []Tag{}
-	}
-	resp, err := MakehttpGetRequest(CATALOG_SERVICE_URL+"/tags", "")
-	if err != nil {
-		log.Fatalf("Error getting tags from catalog service")
-	}
-	alltags := []Tag{}
-	ResponseToObj(resp, &alltags)
-
-	if user.Email != "" {
-		alltags = RemoveFavoriteTagsFromAllTags(alltags, user.FavoriteTags)
-	}
-	alltags = sortTagsByFavoriteCount(alltags)
-
-	var indexInput IndexInput = IndexInput{user, user.FavoriteTags, alltags}
-
 	renderTemplate(w, "index.html", indexInput)
 }
 
@@ -146,324 +86,109 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed, POST only", http.StatusMethodNotAllowed)
 		return
 	}
-	var loginObject LoginObject = LoginObject{r.FormValue("email"), r.FormValue("password")}
-	resp, err := MakehttpPostRequest(USER_SERVICE_URL+"/login", "", strings.NewReader(`{"email":"`+loginObject.Email+`","password":"`+loginObject.Password+`"}`))
+	var loginObject objects.LoginObject = objects.LoginObject{Email: r.FormValue("email"), Password: r.FormValue("password")}
+	resp, err := helper.MakehttpPostRequest(USER_SERVICE_URL+"/login", "", strings.NewReader(`{"email":"`+loginObject.Email+`","password":"`+loginObject.Password+`"}`))
 	if err != nil {
-		renderTemplate(w, "login.html", LoginPageData{&loginObject, &HtmlError{"Failed to login", http.StatusInternalServerError, true}})
+		renderTemplate(w, "login.html", objects.LoginPageData{Login: &loginObject, Error: &objects.HtmlError{Message: "Failed to login", StatusCode: http.StatusInternalServerError, Error: true}})
 		return
 	}
 	defer resp.Body.Close()
-	var jwtObj JWTObject
-	ResponseToObj(resp, &jwtObj)
+	var jwtObj objects.JWTObject
+	helper.ResponseToObj(resp, &jwtObj)
 
-	resp, err = MakehttpGetRequest(USER_SERVICE_URL+"/me", jwtObj.Token)
+	resp, err = helper.MakehttpGetRequest(USER_SERVICE_URL+"/me", jwtObj.Token)
 	if err != nil || resp.StatusCode == http.StatusUnauthorized {
-		renderTemplate(w, "login.html", LoginPageData{&loginObject, &HtmlError{"Incorrect JWT? (This shoulden't happen)", http.StatusInternalServerError, true}})
+		renderTemplate(w, "login.html", objects.LoginPageData{Login: &loginObject, Error: &objects.HtmlError{Message: "Incorrect JWT? (This shoulden't happen)", StatusCode: http.StatusInternalServerError, Error: true}})
 		return
 	}
-	var user User
-	ResponseToObj(resp, &user)
+	var user objects.User
+	helper.ResponseToObj(resp, &user)
 	// Set users cookie's
-	SetUsersCookies(w, user, jwtObj.Token)
+	helper.SetUsersCookies(w, user, jwtObj.Token)
 	w.Header().Set("HX-Redirect", "/")
 }
 
 func HandleLogout(w http.ResponseWriter, r *http.Request) {
-	ClearUsersCookies(w)
+	helper.ClearUsersCookies(w)
 	w.Header().Set("HX-Redirect", "/")
 }
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed, POST only", http.StatusMethodNotAllowed)
-		return
-	}
-	email := r.FormValue("email")
-	password := r.FormValue("password")
-	confirmpassword := r.FormValue("confirmpassword")
-
-	if password != confirmpassword {
-		renderTemplate(w, "register.html", LoginPageData{&LoginObject{email, ""}, &HtmlError{"Passwords do not match", http.StatusBadRequest, true}})
-		return
-	}
-	// _, err := http.Post(USER_SERVICE_URL+"/register", "application/json", strings.NewReader(`{"email":"`+email+`","password":"`+password+`"}`))
-	_, err := MakehttpPostRequest(USER_SERVICE_URL+"/register", "", strings.NewReader(`{"email":"`+email+`","password":"`+password+`"}`))
+	var page, registerOject, err = logic.HandleRegister(w, r)
 	if err != nil {
-		renderTemplate(w, "error.html", HtmlError{"Failed to register", http.StatusInternalServerError, true})
 		return
 	}
-	renderTemplate(w, "login.html", LoginPageData{&LoginObject{email, password}, nil})
+	renderTemplate(w, page, registerOject)
 }
 
 func GetCatalog(w http.ResponseWriter, r *http.Request) {
-	resp, err := MakehttpGetRequest(CATALOG_SERVICE_URL+"/catalog", "")
+	var pagedata, err = logic.GetCatalog(w, r)
 	if err != nil {
-		log.Fatalf("Error getting catalog from catalog service")
+		return
 	}
-	defer resp.Body.Close()
-	var products []Product
-	ResponseToObj(resp, &products)
-	renderTemplate(w, "catalog.html", CatalogPageData{products, nil})
+	renderTemplate(w, "catalog.html", pagedata)
 }
 
 func GetCatalogStyleSearch(w http.ResponseWriter, r *http.Request) {
-	resp, err := MakehttpGetRequest(CATALOG_SERVICE_URL+"/catalog/tags/"+r.URL.Path[len("/catalog/"):], "")
+	var pagedata, err = logic.GetCatalogStyleSearch(w, r)
 	if err != nil {
-		log.Fatalf("Error getting catalog from catalog service")
+		return
 	}
-	defer resp.Body.Close()
-	var products []Product
-	ResponseToObj(resp, &products)
-	renderTemplate(w, "catalog.html", CatalogPageData{products, nil})
+	renderTemplate(w, "catalog.html", pagedata)
 }
 
 func HandleFavoriteTag(w http.ResponseWriter, r *http.Request) {
-	var tag string = r.URL.Path[len("/favorite/tag/"):]
-	var user, jwt, err = GetUserFromCookies(r)
-	// if err != nil {
-	// 	// User is not logged in and cant favorite tags
-	// }
-	if jwt == "" {
-		ClearUsersCookies(w)
-		w.Header().Set("HX-Redirect", "/")
+	var pagedata, err = logic.HandleFavoriteTag(w, r)
+	if err != nil {
 		return
 	}
-	_, err = MakehttpPostRequest(USER_SERVICE_URL+"/favorite/tag/"+tag, jwt, strings.NewReader(`{}`))
-	if err != nil {
-		log.Print("Tag already in favorites")
-	}
-	user.FavoriteTags = append(user.FavoriteTags, Tag{Name: tag})
-	SetUsersCookies(w, user, jwt)
-	renderTemplate(w, "favoriteTag.html", Tag{Name: tag, FavoriteCount: 0})
+	renderTemplate(w, "favoriteTag.html", pagedata)
 }
 
 func HandleUnfavoriteTag(w http.ResponseWriter, r *http.Request) {
-	var tag string = r.URL.Path[len("/unfavorite/tag/"):]
-	var user, jwt, err = GetUserFromCookies(r)
-	// if err != nil {
-	// 	// User is not logged in and cant favorite tags
-	// }
-	if jwt == "" {
-		ClearUsersCookies(w)
-		w.Header().Set("HX-Redirect", "/")
+	var pagedata, err = logic.HandleUnfavoriteTag(w, r)
+	if err != nil {
 		return
 	}
-	_, err = MakehttpDeleteRequest(USER_SERVICE_URL+"/favorite/tag/"+tag, jwt)
+	renderTemplate(w, "normalTag.html", pagedata)
+}
+
+func GetProduct(w http.ResponseWriter, r *http.Request) {
+	var pagedata, err = logic.GetProduct(w, r)
 	if err != nil {
-		log.Print("Tag not found in favorites")
+		renderTemplate(w, "feedback.html", pagedata)
+	} else {
+		renderTemplate(w, "product.html", pagedata)
 	}
-	for x, favtag := range user.FavoriteTags {
-		if favtag.Name == tag {
-			user.FavoriteTags = append(user.FavoriteTags[:x], user.FavoriteTags[x+1:]...)
+}
+
+func GetReport(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		var pagedata, err = logic.GetReport(w, r)
+		if err != nil {
+			renderTemplate(w, "feedback.html", pagedata)
+			return
+		} else {
+			renderTemplate(w, "report.html", pagedata)
 		}
-	}
-	SetUsersCookies(w, user, jwt)
-	renderTemplate(w, "normalTag.html", Tag{Name: tag, FavoriteCount: 0})
-}
-
-// ----------------- Helper functions -----------------
-func SetUsersCookies(w http.ResponseWriter, user User, jwt string) {
-	// Gather the cookies in a slice
-	cookies := []http.Cookie{
-		{
-			Name:    "JWT",
-			Path:    "/",
-			Value:   jwt,
-			Expires: time.Now().Add(time.Duration(JWTTIMEOUT) * time.Hour),
-		},
-		{
-			Name:  "Email",
-			Path:  "/",
-			Value: user.Email,
-		},
-		{
-			Name:  "Username",
-			Path:  "/",
-			Value: strings.Split(user.Email, "@")[0],
-		},
-	}
-
-	// Join favorite tag names and add as a cookie
-	favtagNames := make([]string, len(user.FavoriteTags))
-	for i, tag := range user.FavoriteTags {
-		favtagNames[i] = tag.Name
-	}
-	cookies = append(cookies, http.Cookie{
-		Name:  "FavoriteTags",
-		Path:  "/",
-		Value: strings.Join(favtagNames, ","),
-	})
-
-	// Set all cookies in a loop
-	for _, cookie := range cookies {
-		http.SetCookie(w, &cookie)
-	}
-}
-
-func GetUserFromCookies(r *http.Request) (User, string, error) {
-	var user User
-	var jwt string
-
-	// Get JWT cookie
-	jwtCookie, err := r.Cookie("JWT")
-	if err != nil {
-		return user, jwt, err
-	}
-	jwt = jwtCookie.Value
-
-	// Get Email cookie
-	emailCookie, err := r.Cookie("Email")
-	if err != nil {
-		return user, jwt, err
-	}
-	user.Email = emailCookie.Value
-
-	// Get Username cookie
-	usernameCookie, err := r.Cookie("Username")
-	if err != nil {
-		return user, jwt, err
-	}
-	user.Username = usernameCookie.Value
-
-	// Get FavoriteTags cookie
-	favTagsCookie, err := r.Cookie("FavoriteTags")
-	if err != nil {
-		return user, jwt, err
-	}
-	favTagNames := strings.Split(favTagsCookie.Value, ",")
-	for _, name := range favTagNames {
-		user.FavoriteTags = append(user.FavoriteTags, Tag{Name: name})
-	}
-	for x, tag := range user.FavoriteTags {
-		if tag.Name == "" {
-			user.FavoriteTags = append(user.FavoriteTags[:x], user.FavoriteTags[x+1:]...)
+	} else if r.Method == http.MethodPost {
+		var pagedata, err = logic.HandleReport(w, r)
+		if err != nil {
+			return
 		}
-	}
-	return user, jwt, nil
-}
-
-func ClearUsersCookies(w http.ResponseWriter) {
-	// Gather the cookies in a slice
-	cookies := []http.Cookie{
-		{
-			Name:   "JWT",
-			Path:   "/",
-			MaxAge: -1,
-		},
-		{
-			Name:   "Email",
-			Path:   "/",
-			MaxAge: -1,
-		},
-		{
-			Name:   "Username",
-			Path:   "/",
-			MaxAge: -1,
-		},
-		{
-			Name:   "FavoriteTags",
-			Path:   "/",
-			MaxAge: -1,
-		},
-	}
-	for _, cookie := range cookies {
-		http.SetCookie(w, &cookie)
+		renderTemplate(w, "feedback.html", pagedata)
 	}
 }
 
-func RemoveFavoriteTagsFromAllTags(alltags []Tag, favtags []Tag) []Tag {
-	for x := 0; x < len(alltags); {
-		removed := false
-		for _, favtag := range favtags {
-			if alltags[x].Name == favtag.Name {
-				alltags = append(alltags[:x], alltags[x+1:]...)
-				removed = true
-				break
-			}
-		}
-		if !removed {
-			x++
-		}
-	}
-	return alltags
-}
-
-
-func MakehttpGetRequest(url string, jwt string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
+func HandleReport(w http.ResponseWriter, r *http.Request) {
+	var pagedata, err = logic.HandleReport(w, r)
 	if err != nil {
-		log.Fatalf("Error creating request")
+		return
 	}
-	if jwt != "" {
-		req.Header.Add("authorization", "Bearer "+jwt)
-	}
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Fatalf("Error making request")
-	}
-	return resp, err
+	renderTemplate(w, "feedback.html", pagedata)
 }
 
-func MakehttpPostRequest(url string, jwt string, body *strings.Reader) (*http.Response, error) {
-	req, err := http.NewRequest("POST", url, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	// Add Authorization header if jwt is provided
-	if jwt != "" {
-		req.Header.Add("authorization", "Bearer "+jwt)
-	}
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	// Optionally, check if the response was successful
-	if resp.StatusCode != http.StatusOK {
-		return resp, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-	return resp, nil
-}
-
-func MakehttpDeleteRequest(url string, jwt string) (*http.Response, error) {
-	req, err := http.NewRequest("DELETE", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	// Add Authorization header if jwt is provided
-	if jwt != "" {
-		req.Header.Add("authorization", "Bearer "+jwt)
-	}
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	// Optionally, check if the response was successful
-	if resp.StatusCode != http.StatusOK {
-		return resp, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-	return resp, nil
-}
-
-func ResponseToObj(resp *http.Response, obj interface{}) {
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Failed to get response from:" + resp.Request.URL.String())
-	}
-	if err := json.NewDecoder(resp.Body).Decode(obj); err != nil {
-		log.Fatalf("Failed to decode response")
-	}
-}
-
-func sortTagsByFavoriteCount(tags []Tag) []Tag {
-	sort.Slice(tags, func(i, j int) bool {
-		return tags[i].FavoriteCount > tags[j].FavoriteCount
-	})
-	return tags
-}
-
+// ----------------- Helper functions ----------------- //
 func renderTemplate(w http.ResponseWriter, templateName string, data interface{}) {
 	t, err := template.ParseFiles("templates/" + templateName)
 	if err != nil {

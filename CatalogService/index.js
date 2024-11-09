@@ -39,7 +39,7 @@ app.get('/catalog/:id', async (req, res) => {
 
 
 app.post('/catalog', async (req, res) => {
-        await bal.PostCatalog(dal, req.body);
+    await bal.PostCatalog(dal, req.body);
     res.sendStatus(201);
 });
 
@@ -73,11 +73,53 @@ app.delete('/catalog/:id', async (req, res) => {
 });
 
 app.get('/tags', async (req, res) => {
-        const catalogs = await bal.GetTags(dal, []);
+    const catalogs = await bal.GetTags(dal, []);
     for (let i = 0; i < catalogs.length; i++) {
         delete catalogs[i]._id;
     }
     res.status(200).send(catalogs);
+});
+
+app.get('/report/:id', async (req, res) => {
+    let id = req.params.id;
+    const reports = await bal.GetReports(dal, id);
+    if (reports.length === 0) {
+        res.status(404).send('Report not found');
+        return;
+    }
+    if (reports === 500) {
+        res.status(500).send('Error getting report');
+        return;
+    }
+    res.status(200).send(reports[0]);
+});
+
+app.get('/report/:id/field/:field', async (req, res) => {
+    let id = req.params.id;
+    let field = req.params.field;
+    let reports = await bal.GetReportsByField(dal, id, field);
+    if (reports.length === 0) {
+        res.status(404).send('Report not found');
+        return;
+    }
+    if (reports === 500) {
+        res.status(500).send('Error getting report');
+        return;
+    }
+    res.status(200).send(reports);
+});
+
+app.post('/report/:id/field/:field', async (req, res) => {
+    req.body.id = req.params.id;
+    let field = req.params.field;
+    if (field !== field.charAt(0).toUpperCase() + field.slice(1).toLowerCase()) {
+        res.status(400).send('Invalid field name');
+        return;
+    }
+    req.body.field = field
+    // chaeck if feild has first letter capital and rest lower case
+    await bal.PostReport(dal, req.body);
+    res.sendStatus(201);
 });
 
 app.listen(port, () => {
