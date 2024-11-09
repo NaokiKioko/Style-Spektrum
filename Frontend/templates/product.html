@@ -24,15 +24,14 @@
         <div class="sm:w-1/2">
             <br><br><br>
             <!-- Product Name -->
-            <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ .Name }}</h1>
+            <h1 hx-get="/report/field/{{.ID}}/Name" hx-target="#ReportMenue" class="text-2xl font-bold text-gray-900 mb-2">{{ .Name }}</h1>
 
             <!-- Product Price -->
-            <p class="text-xl text-green-600 font-semibold mb-4">{{ printf "$%.2f" .Price }}</p>
+            <p hx-get="/report/field/{{.ID}}/Price" hx-target="#ReportMenue"class="text-xl text-green-600 font-semibold mb-4">{{ printf "$%.2f" .Price }}</p>
 
             <!-- Product Rating -->
             <div class="flex items-center mb-4">
-                <span class="text-yellow-400 font-semibold text-lg">{{ printf "%.1f" .Rating }} ★</span>
-                <span class="ml-2 text-gray-600">(Rated)</span>
+                <span hx-get="/report/field/{{.ID}}/Rating" hx-target="#ReportMenue" class="text-yellow-400 font-semibold text-lg">{{ printf "%.1f" .Rating }} ★</span>
             </div>
 
             <!-- Product Tags -->
@@ -67,15 +66,18 @@
             <div class="flex flex-wrap gap-2 mb-4">
                 {{ range .Tags }}
                     <span hx-post="/report/tag/{{$.ID}}/{{.}}" hx-target="#ReportMenue"  class="tag text-sm bg-gray-200 text-gray-700 rounded-full px-3 py-1" data-hover="✕">{{ . }}</span>
-                {{ end }} 
+                    {{ end }} 
+                    <span hx-get="/report/tag/{{$.ID}}/{{.}}" hx-target="#ReportMenue"  class="tag text-sm bg-gray-200 text-gray-700 rounded-full px-3 py-1" >+</span>
             </div>
             
 
             <!-- Product Description -->
-            <p class="text-gray-700 text-base mb-6">{{ .Description }}</p>
+            <p hx-get="/report/field/{{.ID}}/Description" hx-target="#ReportMenue" class="text-gray-700 text-base mb-6">{{ .Description }}</p>
 
             <!-- Product URL -->
             <a href="{{ .URL }}" class="bg-[#1a1a1a] text-[#e0e0e0] hover:bg-[#e0e0e0] hover:text-[#1a1a1a] transition-all rounded-md p-2 font-semibold inline-block text-center w-full" target="_blank">View Origin</a>
+            <a hx-get="/report/field/{{.ID}}/URL" hx-target="#ReportMenue" hx-trigger="click" class="underline text-right w-full" >Report Origin</a>
+
             <div id="ReportMenue"></div>
         </div>
     </div>

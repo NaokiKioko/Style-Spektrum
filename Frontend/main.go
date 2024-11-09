@@ -169,8 +169,8 @@ func HandleReportTag(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "feedback.html", pagedata)
 }
 
-func GetReport(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
+func 	GetReport(w http.ResponseWriter, r *http.Request) {
+	if (r.Method == http.MethodGet) {
 		var pagedata, err = logic.GetReport(w, r)
 		if err != nil {
 			return
