@@ -163,48 +163,71 @@ func GetProduct(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	return product, nil
 }
 
-// /report/tag/:ID/:tagname
-func HandleReportTag(w http.ResponseWriter, r *http.Request) (interface{}, error) {
-	var Varibles string = r.URL.Path[len("/report/tag/"):]
-	var productid, tag string = strings.Split(Varibles, "/")[0], strings.Split(Varibles, "/")[1]
-	var user, jwt, err = helper.GetUserFromCookies(r)
-	if jwt == "" {
-		helper.ClearUsersCookies(w)
-		w.Header().Set("HX-Redirect", "/")
-		return nil, errors.New("user not logged in")
-	}
-	_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid+"/tag/"+tag, "", strings.NewReader(`{"Email": "`+user.Email+`"}`))
-	if err != nil {
-		return nil, errors.New("error reporting tag")
-	}
-	return objects.Feedback{Title: "Report Complete", Message: "You Reported the " + tag + " tag for this product! With enough support this will add or remove this tag from this product!"}, nil
-}
-
 func GetReport(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	var Varibles string = r.URL.Path[len("/report/field/"):]
 	var productid, field string = strings.Split(Varibles, "/")[0], strings.Split(Varibles, "/")[1]
 	resp, err := helper.MakehttpGetRequest(CATALOG_SERVICE_URL+"/report/"+productid+"/field/"+field, "")
 	if err != nil {
-		return nil, errors.New("error getting report from catalog service")
+		return nil, errors.New("error getting reports from catalog service")
 	}
-	defer resp.Body.Close()
-	var reports []objects.Report
+	reports := []objects.Report{}
 	helper.ResponseToObj(resp, &reports)
 	if field == "Tag" {
+		reportedtags := []objects.Tag{}
+		for _, report := range reports {
+			reportedtags = append(reportedtags, objects.Tag{Name: report.NewContent.(string), FavoriteCount: report.Popularity})
+		}
 		resp, err = helper.MakehttpGetRequest(CATALOG_SERVICE_URL+"/tags", "")
 		if err != nil {
 			return nil, errors.New("error getting tags from catalog service")
 		}
-		var allTags []objects.Tag
-		helper.ResponseToObj(resp, &allTags)
-		var tagsReported []objects.Tag
-		for _, report := range reports {
-			tagsReported = append(tagsReported, objects.Tag{Name: report.TagName, FavoriteCount: 0})
+		alltags := []objects.Tag{}
+		helper.ResponseToObj(resp, &alltags)
+		helper.RemoveFavoriteTagsFromAllTags(alltags, reportedtags)
+		for _, tag := range alltags {
+			reports = append(reports, objects.Report{NewContent: tag.Name, Popularity: 0, ReportedID: productid})
 		}
-		helper.RemoveFavoriteTagsFromAllTags(allTags, tagsReported)
-		for _, tag := range allTags {
-			reports = append(reports, objects.Report{TagName: tag.Name, Popularity: 0, ReporterEmail: []string{}})
+	}
+	if field == "Images" {
+		// Get product to get images
+		resp, err = helper.MakehttpGetRequest(CATALOG_SERVICE_URL+"/catalog/"+productid, "")
+		if err != nil {
+			return nil, errors.New("error getting product from catalog service")
 		}
+		var product objects.Product
+		helper.ResponseToObj(resp, &product)
+		// reorder images, so that the Imaes on the page come first and then
+		reportsinorder := []objects.Report{}
+		for _, image := range product.Images {
+			found := false
+			foundAt := 0
+			for y, report := range reports {
+				if report.NewContent.(string) == image {
+					found = true
+					foundAt = y
+					break
+				}
+			}
+			if found {
+				reportsinorder = append(reportsinorder, reports[foundAt])
+			} else {
+				reportsinorder = append(reportsinorder, objects.Report{ReportedID: productid, NewContent: image, Popularity: 0})
+			}
+		}
+		// add reports not in reportsinorder (Removed to disable grifing)
+		// for _, report := range reports {
+		// 	found := false
+		// 	for _, reportO := range reportsinorder {
+		// 		if report.NewContent == reportO.NewContent {
+		// 			found = true
+		// 			break
+		// 		}
+		// 	}
+		// 	if !found {
+		// 		reportsinorder = append(reportsinorder, report)
+		// 	}
+		// }
+		reports = reportsinorder
 	}
 	var pageData objects.ReportPageData = objects.ReportPageData{ID: productid, Field: field, Options: reports}
 	return pageData, nil
@@ -212,17 +235,17 @@ func GetReport(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 
 //report/field/:ID/:field
 func HandleReport(w http.ResponseWriter, r *http.Request) (interface{}, error) {
-	if r.Method != http.MethodPost {
-		return nil, errors.New("method not allowed")
-	}
 	var Varibles string = r.URL.Path[len("/report/field/"):]
 	var productid, field string = strings.Split(Varibles, "/")[0], strings.Split(Varibles, "/")[1]
+	newContent := r.FormValue("newcontent")
+	// Check if user is logged in
 	var _, jwt, err = helper.GetUserFromCookies(r)
 	if err != nil {
 		helper.ClearUsersCookies(w)
 		w.Header().Set("HX-Redirect", "/")
 		return nil, errors.New("user not logged in")
 	}
+	// Get user (Makes sure user dosnt spoof by altering cookies email)
 	resp, err := helper.MakehttpGetRequest(USER_SERVICE_URL+"/me", jwt)
 	if err != nil {
 		helper.ClearUsersCookies(w)
@@ -231,13 +254,12 @@ func HandleReport(w http.ResponseWriter, r *http.Request) (interface{}, error) {
 	}
 	var user objects.User
 	helper.ResponseToObj(resp, &user)
-	newContent := r.FormValue("newcontent")
-	if field == "Tag" {
-		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid+"/tag/"+newContent, "", strings.NewReader(`{"Email": "`+user.Email+`"}`))
-	} else if field == "Price" || field == "Rating" {
-		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid, "", strings.NewReader(`{"Email": "`+user.Email+`, "Field": "`+field+`, NewContent":`+newContent+`}`))
+	// make the report
+	// if feild is number make sure no " " is in the newContent body
+	if field == "Price" || field == "Rating" {
+		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid, "", strings.NewReader(`{"Email": "`+user.Email+`, NewContent":`+newContent+`}`))
 	} else {
-		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid, "", strings.NewReader(`{"Email": "`+user.Email+`, "Field": "`+field+`, NewContent":"`+newContent+`"}`))
+		_, err = helper.MakehttpPostRequest(CATALOG_SERVICE_URL+"/report/"+productid, "", strings.NewReader(`{"Email": "`+user.Email+`, NewContent":"`+newContent+`"}`))
 	}
 	if err != nil {
 		return nil, errors.New("error reporting field")

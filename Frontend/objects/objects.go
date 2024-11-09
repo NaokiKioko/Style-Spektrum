@@ -52,7 +52,6 @@ type Feedback struct {
 type Report struct {
 	ReportedID    string
 	NewContent    interface{}
-	TagName       string
 	Popularity    int
 	ReporterEmail []string
 }

@@ -56,8 +56,7 @@ func main() {
 	http.HandleFunc("/favorite/tag/", HandleFavoriteTag)
 	http.HandleFunc("/unfavorite/tag/", HandleUnfavoriteTag)
 	http.HandleFunc("/product/", GetProduct)
-	http.HandleFunc("/report/tag/", HandleReportTag)
-	http.HandleFunc("/report/field/", GetReport) // usually/report/:id/:field 
+	http.HandleFunc("/report/field/", GetReport) // usually /report/field/:id/:field
 
 	if err := http.ListenAndServe(fmt.Sprint(":", PORT), nil); err != nil {
 		fmt.Println("Error starting server:", err)
@@ -161,15 +160,7 @@ func GetProduct(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "product.html", pagedata)
 }
 
-func HandleReportTag(w http.ResponseWriter, r *http.Request) {
-	var pagedata, err = logic.HandleReportTag(w, r)
-	if err != nil {
-		return
-	}
-	renderTemplate(w, "feedback.html", pagedata)
-}
-
-func 	GetReport(w http.ResponseWriter, r *http.Request) {
+func GetReport(w http.ResponseWriter, r *http.Request) {
 	if (r.Method == http.MethodGet) {
 		var pagedata, err = logic.GetReport(w, r)
 		if err != nil {
@@ -183,6 +174,14 @@ func 	GetReport(w http.ResponseWriter, r *http.Request) {
 		}
 		renderTemplate(w, "feedback.html", pagedata)
 	}
+}
+
+func HandleReport(w http.ResponseWriter, r *http.Request) {
+	var pagedata, err = logic.HandleReport(w, r)
+	if err != nil {
+		return
+	}
+	renderTemplate(w, "feedback.html", pagedata)
 }
 
 // ----------------- Helper functions ----------------- //
