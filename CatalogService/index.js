@@ -97,7 +97,7 @@ app.get('/report/:id', async (req, res) => {
 app.get('/report/:id/field/:field', async (req, res) => {
     let id = req.params.id;
     let field = req.params.field;
-    const reports = await bal.GetReportField(dal, id, field);
+    const reports = await bal.GetReportsByFeild(dal, id, field);
     if (reports.length === 0) {
         res.status(404).send('Report not found');
         return;
@@ -109,19 +109,16 @@ app.get('/report/:id/field/:field', async (req, res) => {
     res.status(200).send(reports[0]);
 });
 
-app.post('/report/:id', async (req, res) => {
+app.post('/report/:id/field/:field', async (req, res) => {
     req.body.id = req.params.id;
+    let field = req.params.field;
+    if (field !== field.charAt(0).toUpperCase() + field.slice(1).toLowerCase()) {
+        res.status(400).send('Invalid field name');
+        return;
+    }
+    req.body.field = field
+    // chaeck if feild has first letter capital and rest lower case
     await bal.PostReport(dal, req.body);
-    res.sendStatus(201);
-});
-
-
-
-
-app.post ('/report/:itemID/tag/:tagName', async (req, res) => {
-    req.body.id = req.params.itemID;
-    req.body.tagName = req.params.tagName;
-    await bal.PostReportItemTag(dal, req.body);
     res.sendStatus(201);
 });
 
