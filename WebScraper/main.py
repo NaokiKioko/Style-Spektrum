@@ -16,10 +16,28 @@ def DeleteProductImages():
     # Delete productimages folder
     shutil.rmtree(requester.savefolder, ignore_errors=True)
 
+def ScrapeSite(inputurl: str):
+    response = requester.FetchHTML(inputurl)
+    if response == None or response.status_code != 200:
+        print("Failed to get webpage content")
+        return
+    soup = BeautifulSoup(response.text, 'html.parser')
+    links = soup.find_all('a')
+    for link in links:
+        url = link.get('href')
+        if inputurl.split('/')[2] not in url:
+            continue
+        if url:
+            url = urljoin(inputurl, url)
+            product = ScrapeProduct(url)
+            if product is None:
+                print(f"Failed to scrape product information from {url}")
+            else:
+                send_message("StyleSpektrum", json.dumps({"Topic":"Product", "product": product}))
+
 # Function to scrape product information from a webpage
 def ScrapeProduct(url: str):
     DeleteProductImages()
-    
     # Get the webpage content
     response = requester.FetchHTML(url)
     if response == None or response.status_code != 200:
@@ -82,8 +100,9 @@ def extract_visible_text(soup: BeautifulSoup) -> str:
 def main():
     continuescraping = True
     while continuescraping:
-        print("1. Scrape product images from a webpage")
-        print("2. Exit")
+        print("1. Scrape product")
+        print("2. Scrape site")
+        print("3. Exit")
         choice = input("Enter your choice: ")
         if choice == "1":
             inputurl = Requester.StripDataFromURL(input("Enter the URL of the webpage: "))
@@ -93,6 +112,9 @@ def main():
             else:
                 send_message("StyleSpektrum", json.dumps({"Topic":"Product", "product": product}))
         elif choice == "2":
+            inputurl = Requester.StripDataFromURL(input("Enter the URL of the webpage: "))
+            
+        elif choice == "3":
             continuescraping = False
         else:
             print("Invalid choice. Please try again.")
