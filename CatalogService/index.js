@@ -37,7 +37,6 @@ app.get('/catalog/:id', async (req, res) => {
     res.status(200).send(catalogs[0]);
 });
 
-
 app.post('/catalog', async (req, res) => {
     await bal.PostCatalog(dal, req.body);
     res.sendStatus(201);
@@ -125,3 +124,4 @@ app.post('/report/:id/field/:field', async (req, res) => {
 app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
 });
+
