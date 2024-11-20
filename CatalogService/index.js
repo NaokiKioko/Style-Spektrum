@@ -9,10 +9,7 @@ dal = new DatabaseInterface();
 
 app.use(express.json());
 
-// run the wueue every 10 seconds
-setInterval(() => {
-    queue.processMessages(dal);
-}, 10000);
+
 
 app.get('/', (req, res) => {
     res.send('Style Spektrum!');
@@ -127,7 +124,13 @@ app.post('/report/:id/field/:field', async (req, res) => {
     res.sendStatus(201);
 });
 
+// run the wqeue every 10 seconds
+setInterval(() => {
+    queue.processMessages(dal);
+}, 10000);
+
 app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
 });
+
 
