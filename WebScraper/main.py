@@ -103,6 +103,7 @@ def main():
         print("1. Scrape product")
         print("2. Scrape site")
         print("3. Exit")
+        print("4. Test queue")
         choice = input("Enter your choice: ")
         if choice == "1":
             inputurl = Requester.StripDataFromURL(input("Enter the URL of the webpage: "))
@@ -116,6 +117,8 @@ def main():
             
         elif choice == "3":
             continuescraping = False
+        elif choice == "4":
+            send_message("StyleSpektrum", json.dumps({"Topic":"Test", "test": "Test message"}))
         else:
             print("Invalid choice. Please try again.")
 
