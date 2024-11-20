@@ -116,7 +116,6 @@ class Requester:
     #             driver.quit()
 
     def DownloadImage(self, url: str):
-        imageFilePaths = []
         failCount = 0
         attempt = False
         while (attempt == False):
@@ -133,7 +132,6 @@ class Requester:
                 with open(image_path, 'wb') as f:
                     f.write(response.content)
                 print(f"Image saved to {image_path}")
-                imageFilePaths.append(image_path)
                 # Set working proxy
                 self.working_proxie = proxy
                 self.LoadProxies()
