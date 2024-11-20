@@ -1,12 +1,18 @@
 const express = require('express');
 const app = express();
 const bal = require('./bal/catalog.js');
+const queue = require('./bal/queue.js');
 const DatabaseInterface = require('./dal/mongoDB.js'); // Import the class
 const port = 3001;
 
 dal = new DatabaseInterface();
 
 app.use(express.json());
+
+// run the wueue every 10 seconds
+setInterval(() => {
+    queue.processMessages(dal);
+}, 10000);
 
 app.get('/', (req, res) => {
     res.send('Style Spektrum!');

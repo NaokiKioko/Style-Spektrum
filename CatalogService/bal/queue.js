@@ -56,3 +56,5 @@ const handleMessage = async (dal, body) => {
     }
 
 };
+
+module.exports = { processMessages };
