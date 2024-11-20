@@ -1,10 +1,11 @@
 import os
 import shutil
+import json
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from Requester import Requester
 from ai import GetProductInfo, FilterProductPictures, TagProductImages
-from sqsQueue import SendMessage
+from sqsQueue import send_message
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -83,7 +84,6 @@ def main():
     while continuescraping:
         print("1. Scrape product images from a webpage")
         print("2. Exit")
-        print("3. Demo using (https://www.kohls.com/product/prd-6953168/womens-croft-barrow-34-sleeve-smocked-challis-dress.jsp)")
         choice = input("Enter your choice: ")
         if choice == "1":
             inputurl = Requester.StripDataFromURL(input("Enter the URL of the webpage: "))
@@ -91,12 +91,9 @@ def main():
             if product is None:
                 print("Failed to scrape product information")
             else:
-                SendMessage("product", product)
+                send_message("StyleSpektrum", json.dumps({"Topic":"Product", "product": product}))
         elif choice == "2":
             continuescraping = False
-        elif choice == "3":
-            product = ScrapeProduct("https://www.kohls.com/product/prd-6953168/womens-croft-barrow-34-sleeve-smocked-challis-dress.jsp")
-            SendMessage("product", product)
         else:
             print("Invalid choice. Please try again.")
 

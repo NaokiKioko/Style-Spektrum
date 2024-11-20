@@ -1,21 +1,40 @@
-# file for all things mongoDB
 import os
-import json
+import logging
 import boto3
+from botocore.exceptions import ClientError
+
+logger = logging.getLogger(__name__)
+session = boto3.Session(profile_name="default")  
+sqs = session.client('sqs')
+
+def get_queue_url(name):
+    try:
+        response = sqs.get_queue_url(QueueName=name)
+        queue_url = response['QueueUrl']
+        logger.info("Got queue '%s' with URL=%s", name, queue_url)
+    except ClientError as error:
+        logger.exception("Couldn't get queue named %s.", name)
+        raise error
+    else:
+        return queue_url
 
 
-sqs = boto3.client('sqs')
-queue_url = os.environ.get('QUEUE_URL')
+def send_message(name, message_body, message_attributes=None):
+    queue_url = get_queue_url(name)
+    if not message_attributes:
+        message_attributes = {}
 
-def SendMessage(topic: str, message: json):
-    if (message == None):
-        return None
-    response = sqs.send_message(
-        QueueUrl=queue_url,
-        MessageBody=json.dumps({
-            'topic': topic,
-            'message': message
-        })
-    )
+    try:
+        response = sqs.send_message(
+            QueueUrl=queue_url,
+            MessageBody=message_body,
+            MessageAttributes=message_attributes
+        )
+        logger.info("Sent message to queue '%s'. Message ID: %s", name, response['MessageId'])
+    except ClientError as error:
+        logger.exception("Send message failed: %s", message_body)
+        raise error
+    else:
+        return response
 
-__all__ = ["SendMessage"]
+__all__ = ["send_message"]
