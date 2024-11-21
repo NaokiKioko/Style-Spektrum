@@ -9,8 +9,6 @@ dal = new DatabaseInterface();
 
 app.use(express.json());
 
-
-
 app.get('/', (req, res) => {
     res.send('Style Spektrum!');
 });
@@ -40,10 +38,10 @@ app.get('/catalog/:id', async (req, res) => {
     res.status(200).send(catalogs[0]);
 });
 
-app.post('/catalog', async (req, res) => {
-    await bal.PostCatalog(dal, req.body);
-    res.sendStatus(201);
-});
+// app.post('/catalog', async (req, res) => {
+//     await bal.PostCatalog(dal, req.body);
+//     res.sendStatus(201);
+// });
 
 app.patch('/catalog/:id', async (req, res) => {
     let id = req.params.id;
