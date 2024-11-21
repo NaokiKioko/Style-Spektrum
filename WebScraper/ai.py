@@ -26,7 +26,7 @@ def encode_image(image_path):
 
 def GetProductInfo(htmldata: str)-> json:
     prompt = "You are the python def GetProductInfo(htmldata: str)->json.\n"
-    prompt += "Respond with one and only one valid Json filled with only the main products information from this data with these attributes:\n"
+    prompt += "Respond with ONE and only ONE valid Json object filled with only the main products information from this data with these attributes. If their is not one obvious main product isClothing should be false:\n"
     prompt += "{'title': string, 'price': double, 'description': string, 'rating': double, isCloathing: bool}\n"
     prompt += "Using this data to fill it in:\n"
     prompt += htmldata
@@ -42,6 +42,8 @@ def GetProductInfo(htmldata: str)-> json:
         return None
     jsonToLoad = jsonToLoad.replace("'", "\"")
     product = json.loads(jsonToLoad)
+    if product is None or product == {}:
+        return None
     if not product['isCloathing']:
         return None
     # confirm that the json object is correct

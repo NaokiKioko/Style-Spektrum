@@ -23,11 +23,13 @@ def ScrapeSite(inputurl: str):
         return
     soup = BeautifulSoup(response.text, 'html.parser')
     links = soup.find_all('a')
+    links = set(links)
+    keywords = ['product','products', 'item', ".html"]
     for link in links:
         url = link.get('href')
-        if inputurl.split('/')[2] not in url:
+        if url is None:
             continue
-        if url:
+        if any(keyword in url.lower() for keyword in keywords):
             url = urljoin(inputurl, url)
             product = ScrapeProduct(url)
             if product is None:
@@ -51,6 +53,9 @@ def ScrapeProduct(url: str):
     product = GetProductInfo(AllText)
     if product is None:
         print("Failed to get product information")
+        return
+    if product['isCloathing'] == False:
+        print("Page is not clothing")
         return
     product['url'] = url
 
@@ -114,7 +119,7 @@ def main():
                 send_message("StyleSpektrum", json.dumps({"Topic":"Product", "product": product}))
         elif choice == "2":
             inputurl = Requester.StripDataFromURL(input("Enter the URL of the webpage: "))
-            
+            ScrapeSite(inputurl)
         elif choice == "3":
             continuescraping = False
         elif choice == "4":
