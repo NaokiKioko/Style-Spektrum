@@ -26,9 +26,10 @@ const processMessages = async (dal) => {
         if (data.Messages && data.Messages.length > 0) {
             for (const message of data.Messages) {
                 console.log("Received Message:", message.Body);
+                message.Body = JSON.parse(message.Body);
                 if (message.Body.Topic == "Product")
                     // Process message logic here
-                    await handleMessage(dal, message.Body);
+                    await handleMessage(dal, message.Body.product);
                     // Delete message from queue
                     const deleteParams = {
                         QueueUrl: queueURL,
