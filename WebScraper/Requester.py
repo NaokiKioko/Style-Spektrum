@@ -51,11 +51,12 @@ class Requester:
             proxy = self.GetProxy()
             try:
                 # limit retry count
-                response = requests.get(url, headers=self.GetHeaders(), proxies={'http': f'http://{proxy}', 'https': f'http://{proxy}'}, timeout=30)
+                response = requests.get(url, headers=self.GetHeaders(), proxies={'http': f'http://{proxy}', 'https': f'http://{proxy}'}, timeout=10)
                 response.raise_for_status()  # Raise an exception for HTTP errors
                 attempt = True
                 self.working_proxie = proxy
                 self.LoadProxies()
+                print(f"HTML fetched from {url} Successfully")
                 return response
             except requests.exceptions.RequestException as e:
                 failCount += 1
