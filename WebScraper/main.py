@@ -54,7 +54,7 @@ def ScrapeProduct(url: str):
     if product is None:
         print("Failed to get product information")
         return
-    if product['isCloathing'] == False:
+    if product['IsCloathing'] == False:
         print("Page is not clothing")
         return
     product['url'] = url
@@ -90,6 +90,7 @@ def ScrapeProduct(url: str):
     product['images'] = UrlsAndFolderpaths.urls
     # FilterProductPictures(json: dict, urlList: list, folderpaths: list = None)
     product['tags'] = TagProductImages(UrlsAndFolderpaths.filepaths)
+    del product['IsCloathing']
     return product
 
 def extract_visible_text(soup: BeautifulSoup) -> str:

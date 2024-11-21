@@ -27,7 +27,7 @@ def encode_image(image_path):
 def GetProductInfo(htmldata: str)-> json:
     prompt = "You are the python def GetProductInfo(htmldata: str)->json.\n"
     prompt += "Respond with ONE and only ONE valid Json object filled with only the main products information from this data with these attributes. If their is not one obvious main product isClothing should be false:\n"
-    prompt += "{'title': string, 'price': double, 'description': string, 'rating': double, isCloathing: bool}\n"
+    prompt += "{'Title': string, 'Price': double, 'Description': string, 'Rating': double, IsCloathing: bool}\n"
     prompt += "Using this data to fill it in:\n"
     prompt += htmldata
     response = model.generate_content(prompt)
