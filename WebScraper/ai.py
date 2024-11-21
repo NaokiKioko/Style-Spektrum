@@ -44,7 +44,7 @@ def GetProductInfo(htmldata: str)-> json:
     product = json.loads(jsonToLoad)
     if product is None or product == {}:
         return None
-    if not product['isCloathing']:
+    if not product['IsCloathing']:
         return None
     # confirm that the json object is correct
     if not CheckProductJson(product):
@@ -56,15 +56,15 @@ def CheckProductJson(json: json):
     if not isinstance(json, dict):
         return False
     # check that the json object has the correct attributes
-    if not 'title' in json:
+    if not 'Title' in json:
         return False
-    if not 'price' in json:
+    if not 'Price' in json:
         return False
-    if not 'description' in json:
+    if not 'Description' in json:
         return False
-    if not 'rating' in json:
+    if not 'Rating' in json:
         return False
-    if not 'isCloathing' in json:
+    if not 'IsCloathing' in json:
         return False
     return True
 
