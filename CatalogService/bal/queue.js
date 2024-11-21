@@ -29,7 +29,7 @@ const processMessages = async (dal) => {
                 message.Body = JSON.parse(message.Body);
                 if (message.Body.Topic == "Product")
                     // Process message logic here
-                    await handleMessage(dal, message.Body.product);
+                    await handleMessage(dal, message.Body.Product);
                     // Delete message from queue
                     const deleteParams = {
                         QueueUrl: queueURL,
@@ -45,15 +45,15 @@ const processMessages = async (dal) => {
 };
 
 // Example message handler function
-const handleMessage = async (dal, body) => {
+const handleMessage = async (dal, Product) => {
     // Add your custom message processing logic here
-    console.log("Handling message:", body);
-    found = await bal.GetReportsByField(dal, body.Product.URL, "URL")
+    console.log("Handling message:", Product);
+    found = await bal.GetReportsByField(dal, Product.URL, "URL")
     if ( found.length > 0) {
         console.log("Product already exists");
         return;
     } else{
-        bal.PostCatalog(dal, body.Product);
+        bal.PostCatalog(dal, Product.Product);
     }
 
 };
