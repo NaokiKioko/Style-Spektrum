@@ -57,7 +57,7 @@ def ScrapeProduct(url: str):
     if product['IsCloathing'] == False:
         print("Page is not clothing")
         return
-    product['url'] = url
+    product['URL'] = url
 
     # Get the product images
     image_urls = set()
@@ -70,10 +70,10 @@ def ScrapeProduct(url: str):
 
         # Check conditions for relevance
         if (
-            product['title'].lower() in src.lower() or
+            product['Title'].lower() in src.lower() or
             url.split('/')[-1].replace(".html", "").replace(".jpg", "").lower() in src.lower() or
             img.get('loading', '').lower() == "eager" or
-            product['title'].lower() in img.get('alt', '').lower()
+            product['Title'].lower() in img.get('alt', '').lower()
         ):
             img_url = urljoin(url, src)
             image_urls.add(img_url)  # Using a set to avoid duplicates          
@@ -87,9 +87,9 @@ def ScrapeProduct(url: str):
             filepaths.append(filepath)
 
     UrlsAndFolderpaths = FilterProductPictures(image_urls, filepaths)
-    product['images'] = UrlsAndFolderpaths.urls
+    product['Images'] = UrlsAndFolderpaths.urls
     # FilterProductPictures(json: dict, urlList: list, folderpaths: list = None)
-    product['tags'] = TagProductImages(UrlsAndFolderpaths.filepaths)
+    product['Tags'] = TagProductImages(UrlsAndFolderpaths.filepaths)
     del product['IsCloathing']
     return product
 
