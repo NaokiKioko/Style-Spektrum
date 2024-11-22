@@ -35,7 +35,7 @@ def ScrapeSite(inputurl: str):
             if product is None:
                 print(f"Failed to scrape product information from {url}")
             else:
-                send_message("StyleSpektrum", json.dumps({"Topic":"Product", "product": product}))
+                send_message("StyleSpektrum", json.dumps({"Topic":"Product", "Product": product}))
 
 # Function to scrape product information from a webpage
 def ScrapeProduct(url: str):
