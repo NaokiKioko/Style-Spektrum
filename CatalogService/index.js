@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const bal = require('./bal/catalog.js');
+const queue = require('./bal/queue.js');
 const DatabaseInterface = require('./dal/mongoDB.js'); // Import the class
 const port = 3001;
 
@@ -37,11 +38,10 @@ app.get('/catalog/:id', async (req, res) => {
     res.status(200).send(catalogs[0]);
 });
 
-
-app.post('/catalog', async (req, res) => {
-    await bal.PostCatalog(dal, req.body);
-    res.sendStatus(201);
-});
+// app.post('/catalog', async (req, res) => {
+//     await bal.PostCatalog(dal, req.body);
+//     res.sendStatus(201);
+// });
 
 app.patch('/catalog/:id', async (req, res) => {
     let id = req.params.id;
@@ -122,6 +122,13 @@ app.post('/report/:id/field/:field', async (req, res) => {
     res.sendStatus(201);
 });
 
+// run the wqeue every 10 seconds
+setInterval(() => {
+    queue.processMessages(dal);
+}, 10000);
+
 app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
 });
+
+
