@@ -53,7 +53,7 @@ const handleMessage = async (dal, Product) => {
         console.log("Product already exists");
         return;
     } else{
-        bal.PostCatalog(dal, Product.Product);
+        bal.PostCatalog(dal, Product);
     }
 
 };
