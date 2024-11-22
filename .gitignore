@@ -4,3 +4,5 @@
 UsersService/node_modules
 CatalogService/node_modules
 Frontend/__debug_bin*
+WebScrapper/proxies.txt
+Images
