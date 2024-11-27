@@ -48,7 +48,7 @@ const processMessages = async (dal) => {
 const handleMessage = async (dal, Product) => {
     // Add your custom message processing logic here
     console.log("Handling message:", Product);
-    found = await bal.GetReportsByField(dal, Product.URL, "URL")
+    found = await bal.GetCatalogsByURL(dal, Product.URL)
     if ( found.length > 0) {
         console.log("Product already exists");
         return;

@@ -1,45 +1,61 @@
 import os
+import threading
 import shutil
 import json
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from Requester import Requester
-from ai import GetProductInfo, FilterProductPictures, TagProductImages
+from ai import GetProductInfo, FilterAndTagProductPictures
 from sqsQueue import send_message
 
 from dotenv import load_dotenv
 load_dotenv()
-requester = Requester()
-
 
 def DeleteProductImages():
     # Delete productimages folder
-    shutil.rmtree(requester.savefolder, ignore_errors=True)
+    shutil.rmtree(Requester.savefolder, ignore_errors=True)
+
+def DeleteProductImages(filepaths: list):
+    # Delete the image files
+    for path in filepaths:
+        os.remove(path)
+
+def ExicuteScrapeProduct(url: str):
+    product = ScrapeProduct(url)
+    if product is None:
+        print(f"Failed to scrape product information from {url}")
+    else:
+        send_message("StyleSpektrum", json.dumps({"Topic":"Product", "Product": product}))
 
 def ScrapeSite(inputurl: str):
+    requester = Requester()
     response = requester.FetchHTML(inputurl)
+    del requester
     if response == None or response.status_code != 200:
         print("Failed to get webpage content")
         return
     soup = BeautifulSoup(response.text, 'html.parser')
     links = soup.find_all('a')
     links = set(links)
-    keywords = ['product','products', 'item', ".html"]
+    keywords = ['product/','products/','pro/','women/','clothing/','men/', 'item/', ".html"]
+    
+    # Scrape each product in a new thread
+    threads = []
     for link in links:
         url = link.get('href')
         if url is None:
             continue
         if any(keyword in url.lower() for keyword in keywords):
             url = urljoin(inputurl, url)
-            product = ScrapeProduct(url)
-            if product is None:
-                print(f"Failed to scrape product information from {url}")
-            else:
-                send_message("StyleSpektrum", json.dumps({"Topic":"Product", "Product": product}))
+            thread = threading.Thread(target=ExicuteScrapeProduct, args=(url,))
+            threads.append(thread)
+            thread.start()
+    for thread in threads:
+        thread.join()
 
 # Function to scrape product information from a webpage
 def ScrapeProduct(url: str):
-    DeleteProductImages()
+    requester = Requester()
     # Get the webpage content
     response = requester.FetchHTML(url)
     if response == None or response.status_code != 200:
@@ -70,26 +86,56 @@ def ScrapeProduct(url: str):
 
         # Check conditions for relevance
         if (
-            product['Title'].lower() in src.lower() or
+            product['Name'].lower() in src.lower() or
             url.split('/')[-1].replace(".html", "").replace(".jpg", "").lower() in src.lower() or
             img.get('loading', '').lower() == "eager" or
-            product['Title'].lower() in img.get('alt', '').lower()
+            product['Name'].lower() in img.get('alt', '').lower() or
+            product['Name'].replace(" ", "_").lower() in img.get('alt', '').lower() or
+            product['Name'].replace(" ", "-").lower() in img.get('alt', '').lower()
         ):
             img_url = urljoin(url, src)
-            image_urls.add(img_url)  # Using a set to avoid duplicates          
-
+            image_urls.add(img_url)  # Using a set to avoid duplicates
+        else:
+            # Words in product name might be weirdly ordered in the img URL
+            words = product['Name'].split()
+            inCount = 0
+            for word in words:
+                if word.lower() in src.lower():
+                    inCount += 1
+            if (inCount >= len(words) - 1) and (len(words) > 2):
+                img_url = urljoin(url, src)
+                image_urls.add(img_url)
+            elif (inCount >= len(words)) :
+                img_url = urljoin(url, src)
+                image_urls.add(img_url)
+        
+    if len(image_urls) == 0:
+        print("Failed to get images")
+        return None
     # Filter the product images
     image_urls = list(image_urls)
     filepaths = []
+    imagesFailed = []
     for img in image_urls:
         filepath = requester.DownloadImage(img)
         if filepath:
             filepaths.append(filepath)
-
-    UrlsAndFolderpaths = FilterProductPictures(image_urls, filepaths)
-    product['Images'] = UrlsAndFolderpaths.urls
+        else:
+            imagesFailed.append(img)
+    if (len(imagesFailed) > 0):
+        print(f"Failed to download {len(imagesFailed)} images")
+    for img in imagesFailed:
+        image_urls.remove(img)
+    
+    UrlsAndTags = FilterAndTagProductPictures(image_urls, filepaths)
+    if UrlsAndTags is None:
+        print("Failed to filter and tag images")
+        return None
+    product['Images'] = UrlsAndTags.urls
     # FilterProductPictures(json: dict, urlList: list, folderpaths: list = None)
-    product['Tags'] = TagProductImages(UrlsAndFolderpaths.filepaths)
+    product['Tags'] = UrlsAndTags.tags
+
+    DeleteProductImages(filepaths)
     del product['IsCloathing']
     return product
 
@@ -117,7 +163,7 @@ def main():
             if product is None:
                 print("Failed to scrape product information")
             else:
-                send_message("StyleSpektrum", json.dumps({"Topic":"Product", "product": product}))
+                send_message("StyleSpektrum", json.dumps({"Topic":"Product", "Product": product}))
         elif choice == "2":
             inputurl = Requester.StripDataFromURL(input("Enter the URL of the webpage: "))
             ScrapeSite(inputurl)

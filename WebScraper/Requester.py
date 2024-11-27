@@ -7,7 +7,7 @@ from selenium.webdriver.chrome.options import Options
 
 class Requester:
     load_dotenv()
-    savefolder = os.environ.get('SAVE_FOLDER', 'Images')
+    savefolder = os.environ.get('SAVE_FOLDER', os.path.join(os.path.dirname(__file__), 'images'))
 
     user_agents = [
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
@@ -18,6 +18,7 @@ class Requester:
 
     def __init__(self):
         self.LoadProxies()
+        os.makedirs(self.savefolder, exist_ok=True)
 
     def GetProxy(self):
         if self.working_proxie:
@@ -60,11 +61,10 @@ class Requester:
                 return response
             except requests.exceptions.RequestException as e:
                 failCount += 1
-                print(f"\nProxies Failed: {failCount}\nError fetching {url} with proxy {proxy} | {e}\n")
+                # print(f"\nProxies Failed: {failCount}\nError fetching {url} with proxy {proxy} | {e}\n")
                 # Set working proxy
                 self.working_proxie = None
                 self.proxylist.remove(proxy)
-                
                 continue
 
     # def fetch_html_selenium(self, url: str):
@@ -119,6 +119,7 @@ class Requester:
     def DownloadImage(self, url: str):
         failCount = 0
         attempt = False
+        self.LoadProxies()
         while (attempt == False):
             proxy = self.GetProxy()
             try:
@@ -129,6 +130,8 @@ class Requester:
                 image_path = os.path.join(self.savefolder, image_filename)
                 # Ensure folder exists
                 os.makedirs(self.savefolder, exist_ok=True)
+                # Make sure the image path is unique
+                image_path = self.ValidImagePath(image_path)
                 # Save image
                 with open(image_path, 'wb') as f:
                     f.write(response.content)
@@ -139,14 +142,25 @@ class Requester:
                 return image_path
             except requests.exceptions.RequestException as e:
                 failCount += 1
-                print(f"\nProxies Failed: {failCount}\nError fetching {url} with proxy {proxy} | {e}\n")
+                # print(f"\nProxies Failed: {failCount}\nError fetching {url} with proxy {proxy} | {e}\n")
                 if self.proxylist.count(proxy) > 0:
                     self.working_proxie = None
                     self.proxylist.remove(proxy)
                 else:
                     return None
                 continue
+    
+    def ValidImagePath(self, image_path: str) -> str:
+        count = 0
+        original_path =image_path.rsplit('.', 1)  # Preserve the original path for appending
 
+        while os.path.isfile(image_path):
+            count += 1
+            
+            image_path = f"{original_path[0]}_{count}.{original_path[1]}"
+
+        return image_path
+    
     def LoadProxies(self):
         self.proxylist = []
         filepath = os.path.join(os.path.dirname(__file__), 'proxies.txt')

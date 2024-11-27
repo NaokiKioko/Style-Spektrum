@@ -43,19 +43,19 @@ app.get('/catalog/:id', async (req, res) => {
 //     res.sendStatus(201);
 // });
 
-app.patch('/catalog/:id', async (req, res) => {
-    let id = req.params.id;
-    let result = await bal.PatchCatalog(dal, id, req.body);
-    if (result === 404) {
-        res.status(404).send('Catalog not found');
-        return;
-    }
-    if (result === 500) {
-        res.status(500).send('Error updating catalog');
-        return;
-    }
-    res.sendStatus(202);
-});
+// app.patch('/catalog/:id', async (req, res) => {
+//     let id = req.params.id;
+//     let result = await bal.PatchCatalog(dal, id, req.body);
+//     if (result === 404) {
+//         res.status(404).send('Catalog not found');
+//         return;
+//     }
+//     if (result === 500) {
+//         res.status(500).send('Error updating catalog');
+//         return;
+//     }
+//     res.sendStatus(202);
+// });
 
 app.delete('/catalog/:id', async (req, res) => {
     let id = req.params.id;
