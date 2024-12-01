@@ -82,7 +82,7 @@ def FilterAndTagProductPictures(url_list: list, folder_paths: list) -> UrlsAndTa
     # Construct the prompt for URLs
     prompt = (
         "You are given multiple images and an array of their matching URLs. "
-        "Return an array with the URLs of the clothing product that appears most frequently in the images.\n\n"
+        "Return an array with the URLs of the clothing product that appears most frequently in the images excluding any exact duplicates or non clothing images.\n\n"
         f"URLs:\n{url_list}"
     )
     content.append({"type": "text", "text": prompt})

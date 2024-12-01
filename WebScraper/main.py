@@ -37,7 +37,7 @@ def ScrapeSite(inputurl: str):
     soup = BeautifulSoup(response.text, 'html.parser')
     links = soup.find_all('a')
     links = set(links)
-    keywords = ['product/','products/','pro/','women/','clothing/','men/', 'item/', ".html"]
+    keywords = ['product/','products/','pro/', '/p/', '/ip/','women/','shop','clothing/','men/', 'item/', ".html"]
     
     # Scrape each product in a new thread
     threads = []
@@ -126,10 +126,11 @@ def ScrapeProduct(url: str):
         print(f"Failed to download {len(imagesFailed)} images")
     for img in imagesFailed:
         image_urls.remove(img)
-    
+
     UrlsAndTags = FilterAndTagProductPictures(image_urls, filepaths)
     if UrlsAndTags is None:
         print("Failed to filter and tag images")
+        DeleteProductImages(filepaths)
         return None
     product['Images'] = UrlsAndTags.urls
     # FilterProductPictures(json: dict, urlList: list, folderpaths: list = None)

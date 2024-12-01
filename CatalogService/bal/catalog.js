@@ -10,8 +10,8 @@ async function GetCatalog(dal, id) {
     return await dal.interface("get", "Catalog", { _id: ObjectId.createFromHexString(id) });
 }
 
-async function GetCatalogsByURL(dal, url) {
-    return await dal.interface("get", "Catalog", { "URL": url });
+async function GetCatalogsByFeild(dal, name, value) {
+    return await dal.interface("get", "Catalog", { [name]: value });
 }
 
 async function GetCatalogbyTags(dal, tags) {
@@ -171,5 +171,5 @@ module.exports = {
     PostReport,
     GetReports,
     GetReportsByField,
-    GetCatalogsByURL
+    GetCatalogsByFeild
 }

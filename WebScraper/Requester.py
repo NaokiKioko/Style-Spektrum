@@ -61,7 +61,7 @@ class Requester:
                 return response
             except requests.exceptions.RequestException as e:
                 failCount += 1
-                # print(f"\nProxies Failed: {failCount}\nError fetching {url} with proxy {proxy} | {e}\n")
+                print(f"\nProxies Failed: {failCount}\nError fetching {url} with proxy {proxy} | {e}\n")
                 # Set working proxy
                 self.working_proxie = None
                 self.proxylist.remove(proxy)
