@@ -83,7 +83,6 @@ class DatabaseInterface {
             return 500;
         }
     }
-
     async patchAny(type, object) {
         if (await this.checkConnectionString() === 500) return;
         try {
