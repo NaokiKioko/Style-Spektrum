@@ -46,6 +46,11 @@ func init() {
 
 func main() {
 	fmt.Println("\n\n\n\nServer is running on port", PORT) // This will print before the server starts
+
+	// Serve static files
+	fs := http.FileServer(http.Dir("./static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
+
 	http.HandleFunc("/", IndexHandler)
 	http.HandleFunc("/login", GetLogin)
 	http.HandleFunc("/register", GetRegister)
