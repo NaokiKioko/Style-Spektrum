@@ -7,6 +7,9 @@ from urllib.parse import urljoin
 from Requester import Requester
 from ai import GetProductInfo, FilterAndTagProductPictures
 from sqsQueue import send_message
+from base64 import b64decode as atob
+import execjs
+
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -149,14 +152,42 @@ def extract_visible_text(soup: BeautifulSoup) -> str:
     
     return visible_text
 
+def SetUpProxies():
+    available_proxies = set()
+    response = Requester.ScrapeProxies()
+    soup = BeautifulSoup(response.text, 'html.parser')
+    proxies = soup.find_all('tbody')[0].find_all('tr')
+    for proxy in proxies:
+        row = proxy.find_all('td')
+        if row[6].find('span').text == 'Elite':
+            ctx = execjs.get()
+            
+            scriptAsText = row[0].find('script').text
+            clean_script = scriptAsText.replace('document.write(', '')[:-1]
+            ipAddress = ctx.eval(clean_script)
+            proxie = f"{ipAddress}:{row[1].text.replace('\n', '').replace(' ', '')}"
+            available_proxies.add(proxie)
+    WriteProxieToFile(available_proxies)
+
+# write each array element on a new line
+def WriteProxieToFile(data: dict):
+    # if proxies.txt exists, delete it
+    if os.path.exists('./WebScraper/proxies.txt'):
+        os.remove('./WebScraper/proxies.txt')
+    # create a new proxies.txt file and write the proxies to it
+    with open('./WebScraper/proxies.txt', 'w') as file:
+        for line in data:
+            file.write(line + '\n')
+    
 # Main script logic
 def main():
+    SetUpProxies()
     continuescraping = True
     while continuescraping:
         print("1. Scrape product")
         print("2. Scrape site")
         print("3. Exit")
-        print("4. Test queue")
+        # print("4. Test queue")
         choice = input("Enter your choice: ")
         if choice == "1":
             inputurl = Requester.StripDataFromURL(input("Enter the URL of the webpage: "))
@@ -170,8 +201,8 @@ def main():
             ScrapeSite(inputurl)
         elif choice == "3":
             continuescraping = False
-        elif choice == "4":
-            send_message("StyleSpektrum", json.dumps({"Topic":"Test", "test": "Test message"}))
+        # elif choice == "4":
+        #     send_message("StyleSpektrum", json.dumps({"Topic":"Test", "test": "Test message"}))
         else:
             print("Invalid choice. Please try again.")
 

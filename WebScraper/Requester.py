@@ -120,4 +120,11 @@ class Requester:
             
     def StripDataFromURL(url: str):
         return url.split('?')[0]
+    
+    def ScrapeProxies():
+        # https://www.proxynova.com/proxy-server-list/country-us
+        response = requests.get('https://www.proxynova.com/proxy-server-list/country-us')
+        response.raise_for_status()
+        return response
+
 __all__ = ["Requester"]

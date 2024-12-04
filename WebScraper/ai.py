@@ -87,7 +87,7 @@ def FilterAndTagProductPictures(url_list: list, folder_paths: list) -> UrlsAndTa
     )
     content.append({"type": "text", "text": prompt})
     # Tag image prompt
-    prompt = "Can you then tag those images with the fassion styles this clothing product fits into.\m"
+    prompt = "Can you then tag those images with the fassion styles this clothing product fits into.\n"
     prompt +="I'm asking for major categories. Do not include tags like \"short leave\", \"brown\", \"men\", \"shirt\", etc."
     content.append({"type": "text", "text": prompt})
     
@@ -113,6 +113,15 @@ def FilterAndTagProductPictures(url_list: list, folder_paths: list) -> UrlsAndTa
             response_format=UrlsAndTags
         )
         event = completion.choices[0].message.parsed
+        for i in range(len(event.tags)):
+            event.tags[i] = event.tags[i].capitalize()
+            if '/' in event.tags[i]:
+                extratags = event.tags[i].split('/')
+                for x in range(len(extratags)):
+                    if x == 0:
+                        event.tags[i] = extratags[x]
+                    else:
+                        event.tags.append(extratags[x].capitalize())
         return event
 
     except Exception as e:
